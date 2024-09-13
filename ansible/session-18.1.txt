@@ -1,0 +1,89 @@
+Filters/functions:
+-------------------
+21-filters.yaml
+----------------
+	- name: demo on filters/functions
+	  hosts: localhost
+	  tasks:
+	  - name: print the default variable
+		ansible.builtin.debug:
+		  msg: "Hello,I am learning {{ course | default ('ansible') }}" #used when variable is undefined
+	  
+	  # convert to uppercase
+	  - name: convert to uppercase
+		vars:
+		  greetings: "Hello Shahul"
+		debug:
+		  msg: "{{ greetings | upper }}"      # greetings - Input / upper - function
+	  
+	  # convert to lowercase
+	  - name: convert to lowercase
+		vars:
+		  greetings: "HELLO SHAHUL"
+		debug:
+		  msg: "{{ greetings | lower }}"        
+	  
+	  # unique number 
+	  - name: print the unique number 
+		vars:
+		  numbers: [1,2,3,45,4,3,2]
+		debug:
+		  msg: " {{ numbers | unique }}"  
+	  
+	  # min and max numbers
+	  - name: get min aand max numbers from list
+		vars:
+		  numbers: [1,2,3,4,5,45,4,3,2,1]
+		debug:
+		  msg: " Min: {{ numbers | min }}, Max: {{ numbers | max }}"      
+	  
+	  # convert map to list
+	  - name: convert map to list
+		vars:
+		  course:
+			name: " Devops with AWS "
+			duration: 120
+			trainer: "sivakumar"
+		debug:
+		  msg: "{{ course | dict2items }}"     
+	  
+	  # convert list to map
+	  - name: convert list to map    
+		vars:
+		  course:
+		  - { "key":"name","value":"Devops with aws" }
+		  - { "key":"duration","value": 120 }
+		  - { "key":"trainer","value":"sivakumar" }
+		debug:
+		  msg: "{{ course | items2dict }}"  
+	 
+	 # to check the my Ip    
+	  - name: check ip address
+		vars:
+		  myip: "54.226.253.33"
+		ansible.builtin.debug:
+		  msg: "{{ myip | ansible.utils.ipv4 }}" # it need dependencies (netaddr) to read the Ip address  
+
+	  # use (ansible --vesrsion) 
+	  # use (pip3.9 install netaddr)  
+
+command vs shell
+----------------
+22-command-vs-shell.yaml
+------------------------
+	- name: command vs shell
+	  hosts: local
+	  connection: local
+	  tasks:
+	  - name: execute the command
+		ansible.builtin.shell: ls -ltr > /tmp/output.txt # login to the server and execute command inside
+		# command module, just issues the command
+
+	  - name: check the process
+		ansible.builtin.shell: ps -ef | grep ssh
+		register: output
+
+	  - name: check the process
+		ansible.builtin.command: ps -ef | grep ssh
+		register: output	  
+		

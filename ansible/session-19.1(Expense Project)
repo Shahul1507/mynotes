@@ -1,0 +1,244 @@
+EXPENSE PROJECT ANSIBLE
+-----------------------
+--------------
+inventory.ini
+--------------
+[mysql]
+mysql.shahul.online
+
+[backend]
+backend.shahul.online
+
+[frontend]
+frontend.shahul.online
+
+[all:vars]
+ansible_user=ec2_user
+ansible_password=DevOps321
+
+-----------
+mysql.yaml
+-----------
+	- name: create ec2 and r53 records
+	  hosts: localhost
+	  connection: local
+	  # assignment
+	  # move this to vars_files
+	  vars:
+		subnet_id: "subnet-0843381de6cd43b80" # replace with your subnet id from networking
+		sg_id: "sg-01fb6cf8516e8a66a"  # from security
+		ami_id: "ami-09c813fb71547fc4f" # from instance details
+		instances:
+		- mysql
+		- backend
+		- frontend
+		zone: shahul.online
+
+	  tasks:
+	  - name: ansible to install boto3 and botocore
+		ansible.builtin.pip:
+		  name:
+		  - boto3
+		  - botocore
+		  executable: pip3.9
+	  
+	  - name: create ec2 instance
+		amazon.aws.ec2_instance:
+		  name: "{{ item }}"
+		  vpc_subnet_id: "{{ subnet_id }}"
+		  instance_type: "t3.micro"
+		  security_group: "{{ sg_id }}"
+		  image_id: "{{ ami_id }}"
+		loop: "{{ instances }}"
+		register: ec2_instances # catch the output of return values
+
+	# run command "aws configure" to give access key and security key
+	  - name: print the output
+		ansible.builtin.debug:
+		  msg: "{{ ec2_instances }}" 
+
+	#private IP R53
+	  - name: create r53 private records
+		amazon.aws.route53:
+		  state: present
+		  zone: "{{ zone }}"
+		  record: "{{ item.item }}.{{ zone }}" #mysql.shahul.online
+		  type: A
+		  ttl: 1
+		  value: "{{ item.instances[0].private_ip_address }}"
+		  wait: true
+		  overwrite: true
+		loop: "{{ ec2_instances.results }}"
+	#public IP R53
+	  - name: create r53 public record for frontend
+		amazon.aws.route53:
+		  state: present
+		  zone: "{{ zone }}"
+		  record: "{{ zone }}" #shahul.online
+		  type: A
+		  ttl: 1
+		  value: "{{ item.instances[0].public_ip_address }}"
+		  wait: true
+		  overwrite: true
+		loop: "{{ ec2_instances.results }}"
+		when: item.item == "frontend" # condition is used to create one instance  
+		
+module= (ansible-playbook -i inventory.ini mysq.yaml)	
+
+-------------
+backend.yaml 
+-------------	
+		
+- name: configure backend server
+  hosts: backend
+  become: yes
+  vars:
+    mysql_root_password: ExpenseApp@1
+    login_host: mysql.shahul.online
+  tasks:
+  - name: disable default nodejs
+    ansible.builtin.command: dnf module disable nodejs -y
+
+  - name: enable nodejs 20
+    ansible.builtin.command: dnf module enable nodejs:20 -y
+
+  - name: install nodejs and mysq
+    ansible.builtin.package:
+      name: "{{ item }}"
+      state: present
+    loop:
+    - nodejs
+    - mysql
+
+  - name: create expense user
+    ansible.builtin.user:
+      name: expense
+
+  - name: create app directory
+    ansible.builtin.file:
+      path: /app
+      state: directory
+
+  - name: download the backend code
+    ansible.builtin.get_url:
+      url: https://expense-builds.s3.us-east-1.amazonaws.com/expense-backend-v2.zip
+      dest: /tmp/backend.zip
+
+  - name: extract the code
+    ansible.builtin.unarchive:
+      src: /tmp/backend.zip #by default ansible thinks this is in ansible server
+      dest: /app
+      remote_src: yes
+
+  - name: install dependencies
+    ansible.builtin.command: npm install
+    args:
+      chdir: /app
+
+  - name: copy backend service
+    ansible.builtin.copy:
+      src: backend.service
+      dest: /etc/systemd/system/backend.service
+
+  - name: ansible to install pymysql
+    ansible.builtin.pip:
+      name:
+      - PyMySQL
+      - cryptography
+      executable: pip3.9    
+
+#load schema
+  - name: import mysql data
+    community.mysql.mysql_db:
+      login_user: root
+      login_password: "{{ mysql_root_password }}"
+      login_host: "{{ login_host }}"
+      target: /app/schema/backend.sql
+      name: all # name=all may only be provided if state is dump or import.
+      state: import  
+
+# load the service
+  - name: daemon reload
+    ansible.builtin.systemd_service:
+      daemon_reload: true
+      state: restarted
+      name: backend     
+	  
+	  
+module= (ansible-playbook -i inventory.ini backend.yaml)
+
+-------------------
+===>backend.service:
+-------------------
+[Unit]
+Description = Backend Service
+
+[Service]
+User=expense
+Environment=DB_HOST="mysql.shahul.online"
+ExecStart=/bin/node /app/index.js
+SyslogIdentifier=backend
+
+[Install]
+WantedBy=multi-user.target
+
+-------------------
+===>frontend.yaml :
+-------------------
+
+- name: configure frontend server
+  hosts: frontend
+  become: yes
+  tasks:
+  - name: install nginx server
+    ansible.builtin.package:
+      name: nginx
+      state: present
+  - name: start nginx server
+    ansible.builtin.service:
+      name: nginx
+      state: started
+      enabled: yes
+  - name: remove html directory
+    ansible.builtin.file:
+      path: /usr/share/nginx/html
+      state: absent
+
+  - name: create html directory
+    ansible.builtin.file:
+      path: /usr/share/nginx/html
+      state: directory
+
+  - name: download the frontend code
+    ansible.builtin.get_url:
+      url: https://expense-builds.s3.us-east-1.amazonaws.com/expense-frontend-v2.zip
+      dest: /tmp/frontend.zip
+
+  - name: extract the code
+    ansible.builtin.unarchive:
+      src: /tmp/frontend.zip #by default ansible thinks this is in ansible server
+      dest: /usr/share/nginx/html
+      remote_src: yes
+
+  - name: copy expense conf
+    ansible.builtin.copy:
+      src: expense.conf
+      dest: /etc/nginx/default.d/expense.conf
+
+  - name: restart nginx
+    ansible.builtin.service:
+      name: nginx
+      state: restarted
+
+-----------------
+===>expense.conf :
+-----------------
+
+proxy_http_version 1.1;
+
+location /api/ { proxy_pass http://backend.shahul.online:8080/; }
+
+location /health {
+  stub_status on;
+  access_log off;
+}

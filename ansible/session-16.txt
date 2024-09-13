@@ -1,0 +1,271 @@
+Content:
+--------
+1. Ansible Inventory
+2. Ansible variables
+3. Ansible preferences
+
+Ansible capable of  connecting to any system externally and can perform the tasks given by us because of background python 
+Ansible originally to configure inside the servers not to connect with external systems because ansible runs with python code in background it can easily connect external systems also
+
+
+Here we call ansible modules, every module syntax we can check in the documentation
+module name is mandatory, you can supply args to module.. they may be optional or mandatory
+
+ping module
+
+what is ansible playbook --> It is a list of plays which contains modules that can do specific task
+
+1.create two servers in aws with names i.e., ansible-server, ansible node 
+2.create the repository (ansible) in github 
+3.clone the repo to the git bash (git clone https://github.com/Shahul1507/ansible.git )
+4.open the repo in IDE(Integrated development environment)i.e.,VS code 
+5.connect the ansible-server in Mobaexterm
+6.clone the git repo to ansible-server  (git clone https://github.com/Shahul1507/ansible.git )
+7.install the ansible in ansible-server (sudo dnf install ansible -y)
+8.create the playbook 
+  01-ping.yaml
+  -------------
+   - name: ping the server
+   hosts: web   #which hosts your ansible wants to connect
+   tasks:       #list of tasks/modules/collections   
+	- name: ping the server
+	  ansible.buitin.ping: # ansible ping module
+
+   inventory.ini  (a file contains list of servers ansible is connecting to nodes)
+   --------------
+ [web]
+  172.31.38.29 #(Private Ip of ansible node)
+8.commit the above yaml playbook to the local repo in git bash( git add . ; git commit -m "ansible"; git push origin main)
+9.clone the git local repo to the ansible-server (git clone <url>)
+10.cd ansible
+11.git pull
+12.run the module ( ansible-playbook -i inventory.ini -e ansible_user=ec2-user -e ansible_password=DevOps321 01-ping.yaml)
+
+  02-multi-play.yaml
+  ------------------
+	  #PLAY-01
+	- name: PLAY-01
+	  hosts: web
+	  tasks:
+	  - name: PLAY-01 TASK-01
+		ansible.builtin.debug:
+		  msg: "This is from PLAY-01 and TASK-01"
+   
+   commit and pull and check the O/P ("msg": "This is from PLAY-01 and TASK-01")
+   
+		#PLAY-02
+	- name: PLAY-02
+	  hosts: web
+	  tasks:
+	  - name: PLAY-02 TASK-01
+		ansible.builtin.debug:
+		  msg: "This is from PLAY-02 and TASK-01"
+
+    commit and pull and check the O/P ("msg": "This is from PLAY-01 and TASK-01" && "msg": "This is from PLAT-02 and TASK-01")	
+
+Interview : write a playbook by sharing the screen with ngnix installation.
+   03-ngnix.yaml 
+   --------------
+	- name: nginx install and run
+	  hosts: web
+	  become: yes #take sudo access
+	  tasks:
+	  - name: install nginx
+		ansible.builtin.package: #heterongenous module that can work for all distros
+		  name: nginx
+		  state: present
+	  
+	  - name: run nginx
+		ansible.builtin.service:
+		  name: nginx
+		  state: started
+		  enabled: yes
+
+variables:
+----------
+  04-variables.yaml
+  -----------------
+  - name: variables to print
+    hosts: web
+    tasks:
+	  - name: print the information
+		ansible.builtin.debug:
+		  msg: "Hi,Iam learning:devops with aws, Duration: 120Hrs, Trainer:Siva Kumar"
+		  
+    commit and pull and check the O/P ("msg": "Hi,Iam learning:devops with aws, Duration: 120Hrs, Trainer:Siva Kumar")	
+		  
+  05-variable-dec.yaml (variable declaration "{{}}")  
+  --------------------
+  - name: variables to print
+    hosts: web
+    vars:
+	  COURSE: "Devops with aws"
+	  DURATION: "120 Hrs"
+	  TRAINER: "Siva Kumar"
+    tasks:
+    - name: print the information
+      ansible.builtin.debug:
+        msg: "Hi,I am learning: {{COURSE}},Duration is: {{DURATION}},Trainer is: {{TRAINER}}"    
+		  
+	commit and pull and check the O/P ("msg": "Hi,Iam learning:devops with aws, Duration: 120Hrs, Trainer:Siva Kumar")
+	
+   06-tasks-var.yaml (Inheritance concept)
+   -----------------
+	- name: variables to print
+	  hosts: web
+	  vars:
+		COURSE: "Devops with aws"
+		DURATION: "120 Hrs"
+		TRAINER: "Siva Kumar"
+	  tasks:
+	  - name: print the information
+		ansible.builtin.debug:
+		  msg: "Hi,I am learning: {{COURSE}},Duration is: {{DURATION}},Trainer is: {{TRAINER}}"   
+
+	  - name: print the information again
+		vars: 
+		  COURSE: "Ansible"
+		ansible.builtin.debug:
+		  msg: "Hi,I am learning: {{COURSE}},Duration is: {{DURATION}},Trainer is: {{TRAINER}}"     
+		  
+	  - name: print the information again
+        ansible.builtin.debug:
+		  msg: "Hi,I am learning: {{COURSE}},Duration is: {{DURATION}},Trainer is: {{TRAINER}}"   	  
+
+  Task-01 O/P :commit and pull and check the O/P ("msg": "Hi,Iam learning:devops with aws, Duration: 120Hrs, Trainer:Siva Kumar")	
+  Task-02 O/P :commit and pull and check the O/P ("msg": "Hi,Iam learning:Ansible, Duration: 120Hrs, Trainer:Siva Kumar") 
+  Task-03 O/P :commit and pull and check the O/P ("msg": "Hi,Iam learning:devops with aws, Duration: 120Hrs, Trainer:Siva Kumar")  
+	
+	07-vars-files.yaml(Syntax:vars_files)(creating a seprate a "vars.yaml" file to call the task )
+	---------------------------------------------------------------------------
+	- name: Variables from files
+	  hosts: web
+	  vars_files:
+		vars.yaml
+	  tasks:
+	  - name: print the course information
+		ansible.buitin.debug:
+		 msg: "Hi,I am learning:{{COURSE}},duration is:{{DURATION}},Trainer is:{{TRAINER}}"
+
+    vars.yaml
+    ---------
+	COURSE: "Devops with AWS"
+	DURATION: "120Hrs"
+	TRAINER: : Siva kumar"
+	
+	O/P :commit and pull and check the O/P ("msg": "Hi,Iam learning:devops with aws, Duration: 120Hrs, Trainer:Siva Kumar")
+	
+	08-vars-prompt(syntax: "vars_prompt")(here input are given manually)
+	------------------------------------
+	- name: Variables from prompt
+	  hosts: web
+	  vars_prompt:
+	  - name: COURSE
+		prompt: Please enter the course name
+	  - name: DURATION
+		prompt: Please enter the duration
+	  - name: TRAINER
+		prompt: Please enter the trainer name
+	  tasks:
+	  - name: Print the course Information
+		ansible.builtin.debug:
+		  msg: "Hi,Iam learing:{{COURSE}},with duration: {{DURATION}},and the Trainer: {{TRAINER}}" 
+		  
+	## what ever we assign under "vars-prompt" it takes as string
+	
+   09-vars-prompt-private.yaml (syntax: private: false) its used to not hide the data while typing
+   ----------------------------------------------------
+	- name: Variables from prompt
+	  hosts: web
+	  vars_prompt:
+	  - name: COURSE
+		prompt: Please enter the course name
+		private: false #By defalut promt date is hidden so private module is used
+	  - name: DURATION
+		prompt: Please enter the duration
+		private: false
+	  - name: TRAINER
+		prompt: Please enter the trainer name
+		private: false
+	  tasks:
+	  - name: Print the course Information
+		ansible.builtin.debug:
+		  msg: "Hi,Iam learing:{{COURSE}},with duration: {{DURATION}},and the Trainer: {{TRAINER}}"    
+	
+	10-vars-from-inventory.yaml (calling the variable from inventory)
+    -----------------------------------------------------------------
+	- name: varibles from inventory
+	  hosts: web
+	  tasks: 
+	  - name: print the course information 
+		ansible.builtin.debug:
+		  msg: "Hi,I am learning: {{COURSE}},Duration is: {{DURATION}},Trainer is: {{TRAINER}}"	
+		  
+		  
+		 inventory.ini
+		 -------------
+		 [web]
+		 Private IP of Node Server
+		 
+		 [web:vars]
+		 COURSE= Ansible
+         DURATION= 120 Hrs
+         TRAINER= Shahul
+		 
+	(playbook automatically reads the variables from inventory.ini even if play is not assigned in yamlscript)	
+	
+	11-vars-from-args.yaml(Reading variables from arguments)(Syntax: -e "arguments" ex:- -e "NAME=SHAHUL GREETINGS=MORNING")
+	--------------------------------------------------------
+	- name: variables from arguments
+	  hosts: web
+	  tasks:
+	  - name: print the variables from arguments
+	    ansible.builtin.debug:
+	      msg: "Hello {{NAME}}, Good {{GREETINGS}}" 
+		 
+	Module: ansible-playbook -i inventory.ini -e ansible_user=ec2-user -e ansible_password=DevOps321 11-vars-from-args.yaml -e "NAME=SHAHUL GREETINGS=MORNING"  	 
+    	
+	12-vars-prefrences.yaml
+   -------------------------
+
+	- name: variables to print
+	  hosts: web
+	  vars:
+		COURSE: "DevOps with AWS from PLAY level"
+		DURATION: "120HRS"
+		TRAINER: "Sivakumar Reddy M"
+	  vars_files:
+	  - vars.yaml
+	  vars_prompt:
+	  - name: COURSE
+		prompt: Please enter the course name
+		private: false # not confidential
+	  tasks:
+	  - name: print the information
+		vars:
+		  COURSE: "DevOps with AWS from TASK level"
+		  DURATION: "120HRS"
+		  TRAINER: "Sivakumar Reddy M"
+		ansible.builtin.debug:
+		  msg: "Hi, I am learning {{COURSE}}"
+   
+ Module:ansible-playbook -i inventory.ini -e ansible_user=ec2-user -e ansible_password=DevOps321 12-vars-preferences.yaml -e "COURSE='Devops with aws from args'"
+ 
+ Preference:
+ -----------
+ #1. command line/args
+#2. Task level
+#3. Files
+#4. prompt
+#5. Play
+#6. inventory
+#7. Roles
+
+
+
+play level variables
+task level variables
+variables from files
+variables from prompt
+variables from inventory
+variables from command line/args

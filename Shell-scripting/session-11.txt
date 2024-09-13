@@ -1,0 +1,226 @@
+Recap
+----------
+variables
+data types
+conditions
+loops
+functions
+
+variables
+----------
+DRY --> don't repeat yourself
+
+variables inside script:
+------------------------
+#!/bin/bash
+PERSON1=Suresh  #Variable:1
+PERSON2=Ramesh  #variable:2
+
+echo "$PERSON1::Hi $PERSON2, How are you?"
+echo "$PERSON2:: Hello $PERSON1. I am fine, How are you doing?"
+echo "$PERSON1:: I am doing good $PERSON2. What's going on?"
+echo "$PERSON2:: I Started learning Shell Script $PERSON1"
+
+variables passed as arguement:
+------------------------------
+#!/bin/bash
+
+PERSON1=$1 #Argument:1
+PERSON2=$2 #Argument:2
+
+echo "$PERSON1::Hi $PERSON2, How are you?"
+echo "$PERSON2:: Hello $PERSON1. I am fine, How are you doing?"
+echo "$PERSON1:: I am doing good $PERSON2. What's going on?"
+echo "$PERSON2:: I Started learning Shell Script $PERSON1"
+
+variables sent through interruption:
+------------------------------------
+#!/bin/bash
+
+echo "please enter username::"
+
+read -s USERNAME #takes input into username variable # (-s) Hides the variable 
+
+echo "Username entered is :: $USERNAME"
+
+echo "please enter password"
+
+read -s PASSWORD
+
+echo "Password entered is :: $PASSWORD"
+
+FRUITS=("Apple" "Jack" "Banana")
+          (0)     (1)     (2)
+		  
+Intexation of above array is{0,1,2}
+Size of the array = 3
+
+
+How do you run a command inside shell script and get the value?
+--------------------------------------------------------------
+07-command-output.sh
+
+#!/bin/bash
+
+DATE=$(date +%F)
+
+echo "Today's date :: $DATE"
+
+when script started executing
+
+VARIABLE=$(command)
+
+Data Types:(I want a program to add 2 numbers...(a+b))
+----------
+08-data-types.sh
+#!/bin/bash
+
+NUMBER1=$1
+NUMBER2=$2
+
+SUM=$((NUMBER1+NUMBER2))
+
+echo :: "TOTAL OF TWO NUMBERS is :$SUM"
+
+
+special variables (Interview)
+--------------------
+1. I want all the variables passed to the script:($@)
+2. How many variables/args passed to the script:($#)
+3. To know the script namre : ($0)
+4. To know Current working directory: ($PWD)
+5. To Know Home directory of current user: ($HOME)
+6. To know the PID #(prcess ID)of the script executing now: ($$)
+7. To Know the last background PID: ($!)
+8. TO know the exit status of previous command : ($?) If its 0= success || 1-127 =failure
+Example script:
+---------------
+#!/bin/bash
+
+echo "All variables passed to the script: $@"
+echo "Number of variables passed: $#"
+echo "Script name: $0"
+echo "Current working directory: $PWD"
+echo "Home directory of current user: $HOME"
+echo "PID #(prcess ID)of the script executing now: $$"
+sleep 100 &
+echo "PID of last background command: $!" #ps -ef | grep sleep
+
+conditions(10-conditions.sh)
+---------------------------
+
+if and else
+
+if(expression)
+{
+	execute these statements if above expression is true
+}
+
+if(expression)
+{
+	execute these statements if above expression is true
+}
+else
+{
+	execute these statements if above expression is not true/false
+}
+
+
+today=what is today
+
+if(today == "Monday" or "Tuesday" or "Wed" or "Thu" or "Fri")
+{
+
+	print "attend the class"
+
+}
+else
+{
+	print "no class"
+}
+
+if(today != "Sat" or "Sun")
+{
+	print "attend session"
+}
+else{
+	print "no session"
+}
+Practice script: 
+-------------------
+(#gt(greaterthan), lt (lessthan), eq (equal to), -ne (not equal to), -ge (greaterthan equal to), -le(greaterthan equal to)
+1. get the numbr
+2. check it is greater than 20 or not
+3. print number greater than 20, if it is greater than 20
+4. otherwise print less than 20
+
+install mysql through shell script:(11-installation.sh)
+---------------------------------
+
+1. check the user has root access or not (UserId of 0) (command to check USER ID : ID)
+2. if root access, proceed with the script
+3. otherwise throw the error
+4. check already installed or not, if installed tell the user it is already installed
+5. if not installed, install it
+6. check it is success or not
+
+if you face error, what you do?
+	proceed running the script
+	stop the script execute, clear error and run again
+	
+it will not stop even it face the error...
+
+how you will check previous command is success or not
+
+exit status
+--------------
+$?
+
+it will tell you the state of previous command
+
+0 --> success
+1-127 --> failure
+
+10th exams, with 33%
+
+functions
+-----------------
+some work to do
+
+we need inputs to perfom some work --> we get output
+
+login(username, password){
+	select * from user where user='username' and password='password'
+	if ($? -eq 0 )
+	then
+		echo "login success"
+	else
+		echo "login failed"
+	fi
+}
+
+you can call function anytime
+
+FUNC_NAME(){
+
+
+}
+
+FUNC_NAME
+
+
+better coding
+--------------
+1. less number of lines but same work
+2. double number of lines but same work
+
+Colors
+--------------
+success-> green
+failure-> red
+
+31m-> red
+32m-> green
+33m--> yello
+
+R"\e[31m"

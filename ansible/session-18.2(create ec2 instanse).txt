@@ -1,0 +1,71 @@
+Creating ec2 instance (https://vijaycodes.hashnode.dev/expense-project-using-ansible)
+---------------------
+23-create-ec2-r53.yaml (https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_instance_module.html)
+----------------------
+---> create a ansible-server
+---> copy ( vpc_subnet_id: instance_type:security_group:image_id:) to the below script
+
+	- name: create ec2 and r53 records
+	  hosts: localhost
+	  connection: local
+	  # assignment
+	  # move this to vars_files
+	  vars:
+		subnet_id: "subnet-0843381de6cd43b80" # replace with your subnet id from networking
+		sg_id: "sg-01fb6cf8516e8a66a"  # from security
+		ami_id: "ami-09c813fb71547fc4f" # from instance details
+		instances:
+		- mysql
+		- backend
+		- frontend
+		zone: shahul.online
+
+	  tasks:
+	  - name: ansible to install boto3 and botocore
+		ansible.builtin.pip:
+		  name:
+		  - boto3
+		  - botocore
+		  executable: pip3.9
+	  
+	  - name: create ec2 instance
+		amazon.aws.ec2_instance:
+		  name: "{{ item }}"
+		  vpc_subnet_id: "{{ subnet_id }}"
+		  instance_type: "t3.micro"
+		  security_group: "{{ sg_id }}"
+		  image_id: "{{ ami_id }}"
+		loop: "{{ instances }}"
+		register: ec2_instances # catch the output of return values
+
+	# run command "aws configure" to give access key and security key
+	  - name: print the output
+		ansible.builtin.debug:
+		  msg: "{{ ec2_instances }}" 
+
+	#private IP R53
+	  - name: create r53 private records
+		amazon.aws.route53:
+		  state: present
+		  zone: "{{ zone }}"
+		  record: "{{ item.item }}.{{ zone }}" #mysql.shahul.online
+		  type: A
+		  ttl: 1
+		  value: "{{ item.instances[0].private_ip_address }}"
+		  wait: true
+		  overwrite: true
+		loop: "{{ ec2_instances.results }}"
+	#public IP R53
+	  - name: create r53 public record for frontend
+		amazon.aws.route53:
+		  state: present
+		  zone: "{{ zone }}"
+		  record: "{{ zone }}" #shahul.online
+		  type: A
+		  ttl: 1
+		  value: "{{ item.instances[0].public_ip_address }}"
+		  wait: true
+		  overwrite: true
+		loop: "{{ ec2_instances.results }}"
+		when: item.item == "frontend" # condition is used to create one instance  
+

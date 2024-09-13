@@ -1,0 +1,72 @@
+Session-19:
+DATE: 05-SEP-2024
+
+Expense Project  using Ansible
+---------------------------------------
+MySQL
+Backend
+Frontend
+
+It Neeed:
+---------
+3 servers, 3 records
+mysql.daws81.online --> private ip
+backend.daws81.online --> private ip
+frontend.daws81.online --> private ip
+daws81.online --> public ip
+
+----------
+===>STEPS
+----------
+---> create ansible server in AWS
+---> connect to remote tool (mobaxterm)to ansible-server
+---> install ansible in it (sudo dnf install ansible -y)
+---> create user (ansible-user) in IAM (Identity and access management)
+---> "aws configure" command and give access key,secret key and region  
+---> clone the repo to the git bash (git clone https://github.com/Shahul1507/ansible-03.git)
+---> cd ansible-03 
+---> run the module "ansible-playbook 23-create-ec2-r53.yaml"
+---> check instance and hostzones will be created in EC2 and R53 in AWS
+---> create inventory.ini in IDE(Integrated development environment)i.e,VS code (refer: session-19.1)
+---> create repo in github with "expense-ansible" 
+---> clone the repo to the git bash (git clone https://github.com/Shahul1507/expense-ansible.git)
+---> cd expense-ansible
+---> create mysql.yaml (refer: session-19.1) there will mysql module in ansible 
+---> Run the mysql.yaml (ansible-playbook -i inventory.ini mysql.yaml)
+---> check the mysql server node manually once the playbook has completed 
+---> login_user: ec2-user , login_password: DevOps321 
+---> run the cmd (mysql -h mysql.shahul.online -u root -pExpenseApp@1) to check mysql db is connected 
+---> Run the backend.yaml (ansible-playbook -i inventory.ini backend.yaml)
+---> check the backend server node manually once the playbook has completed 
+---> login_user: ec2-user , login_password: DevOps321 
+---> run the cmd (mysql -h mysql.shahul.online -u root -pExpenseApp@1) to check backend is connected to db
+---> Run the frontend.yaml (ansible-playbook -i inventory.ini frontend.yaml)
+---> check the domain in browser once playbook is completed ex:shahul.online 
+	---------------------------
+	1. I will provide host, username and password
+	2. fail, if it does not setup
+	3. now create root password
+	4. if pass skip it
+
+--->there is ansible module for mysql 
+---> module for root pass 
+
+	- name: connect mysql server
+	  community.mysql.mysql_info:
+		login_user: root
+		login_password: rootpass
+		
+     mysql -h <host-address> -u root -p<password>
+
+ansible server --> remote server/node
+
+Ansible Roles
+------------------
+DRY --> don't repeat yourself
+
+variables
+functions
+
+roles --> we will repeated code here and call whenever required and a proper structure of ansible playbook
+
+"COURSE='DevOps with AWS' "

@@ -1,0 +1,76 @@
+variables
+conditions --> When
+loops --> loop
+data types
+functions == filters(filter --> manipulations)
+python --> ansible is not giving opportunity to write custom functions, if we want we have to write python code and get that functionality
+
+
+==>Ansible Handling undefined errors:(https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_filters.html#using-filters-to-manipulate-data)
+------------------------------
+You can provide default values for variables directly in your templates using the Jinja2 ‘default’ filter. This is often a better approach than failing if a variable is not defined:
+syntax:{{ some_variable | default(variable) 
+Example:
+	msg: "Hello {{ course | default('Ansible') }}"
+		  
+
+list starts with - 
+when the list is printed []
+
+vars:
+	course:
+		name: "DevOps with AWS"
+		duration: 120
+		trainer: "sivakumar reddy"
+
+
+O/p
+[
+        {
+            "key": "name",
+            "value": "DevOps with AWS"
+        },
+        {
+            "key": "duration",
+            "value": 120
+        },
+        {
+            "key": "trainer",
+            "value": "sivakumar reddy"
+        }
+ ]
+
+when ever there isnt a particular module in ansible :
+---------------------------------------------------
+we use ====>    ansible.builtin.command
+			 (or)ansible.builtin.shell
+
+Interview: what is command vs shell?
+-----------------------------------
+command --> simple commands, it will not get the shell environment
+shell --> complex like pipes, redirections, etc. it gets the shell environment
+
+command is secure than shell, prefer use command if works
+
+Expense Project
+-----------------------
+3 servers, 3 records
+mysql.daws81.online --> private ip
+backend.daws81.online --> private ip
+frontend.daws81.online --> private ip
+daws81.online --> public ip
+
+ansible is not only CM tool, it can connect to any system if module is available
+
+ansible --> AWS---- we need (boot3 & bootcore) to connect to aws
+
+https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_instance_module.html
+
+aws configure: command should be executed when ever we create a instance through ansible
+ec2_instance.results ---list
+ec2_createinstances.results.json
+----------------------------------
+to read the IP address from the above file.json
+
+value: "{{ item.instances[0].private_ip_address }}" mysql,backend,frontend
+value: "{{ item.instances[0].public_ip_address }}" front end
