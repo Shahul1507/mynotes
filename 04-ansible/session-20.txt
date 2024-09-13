@@ -9,13 +9,27 @@ files/ --> files without variables here
 vars/  --> you can keep all variables here
 defaults/ --> low priority variables
 meta/ --> other dependencies
-library/     
-               --> you can keep your custom modules using python here
+library/     --> you can keep your custom modules using python here
 module_utils/     # roles can also include custom module_utils
-
 lookup_plugins/ --> all plugins here
+------------------------------------
+EXPENSE PROJECT USING ANSIBLE ROLES :
+------------------------------------
+===>STEPS
+----------
+---> create ansible server in AWS
+---> connect to remote tool (mobaxterm)to ansible-server
+---> install ansible in it (sudo dnf install ansible -y)
+---> create user (ansible-user) in IAM (Identity and access management)
+---> "aws configure" command and give access key,secret key and region  
+---> we can use modify roles in ec2 instances in actions --> security --> modify IAM role 
+---> clone the repo to the git bash (git clone https://github.com/Shahul1507/expense-ansible-roles.git)
+---> cd expense-ansible-roles
+---> run the module "ansible-playbook 23-create-ec2-r53.yaml"
+--->follow the link other steps(https://vijaycodes.hashnode.dev/expense-project-using-ansible-roles#heading-what-are-ansible-roles)
 
-ansible.cfg
+
+ansible.cfg (Generally configuration files are present in /etc folder)
 ---------------
 /etc/ansible/ansible.cfg
 
@@ -23,6 +37,15 @@ ansible.cfg
 2. Current working directory
 3. user home directory
 4. etc 
+
+ANSIBLE_CONFIG (environment variable if set)
+
+ansible.cfg (in the current directory)
+
+~/.ansible.cfg (in the home directory)
+
+/etc/ansible/ansible.cfg
+
 
 jinja2 --> templating langugage
 -------------------------------
@@ -45,7 +68,8 @@ When a task is not changed, we no need to restart anything and no need to notify
 3. download code
 4. extract code
 
-/app, /usr/share/nginx/html
+for node js we are creating : /app, 
+for nginx we are keeping the code : /usr/share/nginx/html
 
 backend=/app
 frontend=/usr/share/nginx/html
