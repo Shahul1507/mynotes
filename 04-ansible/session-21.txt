@@ -35,7 +35,8 @@ mysql -> mysqlll
 
 updated mysql --> mysqlll
 
-ansible is for configuration management
+ansible is for configuration ,it means to work inside the servers.
+ansible doesn't suite for infracture management and also ansible is declarative .
 
 expense-ansible-mysql
 expense-ansible-backend

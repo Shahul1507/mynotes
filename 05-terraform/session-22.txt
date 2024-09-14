@@ -6,7 +6,7 @@ Linux Servers
 Shell scripting
 Ansible
 
-Terraform --> IaaC
+Terraform --> IaaC ("Infrastructure as a code" developed by Hashicorp.)
 ----------------
 EC2
 R53
@@ -23,7 +23,7 @@ Consistent Infra --> All environment configs and infra should be some..
 
 CRUD --> Create infra, read, update, deleting the infra
 
-Inventory/resource management --> If you see tf script, you know what are the services you are using
+Inventory/resource management --> If you see the terraform script, you know what are the services you are using
 
 Cost optimisation --> creation in 5min, deletion in 5min
 
@@ -47,6 +47,7 @@ keep terraform.exe in some folder
 edit the environment variables, provide the path
 
 aws configure --> AWS command line install
+https://awscli.amazonaws.com/AWSCLIV2.msi
 
 Resources
 
@@ -65,10 +66,54 @@ functions
 	
 Create EC2 instance through terraform
 -------------------------------------
+--> create a terrafoem repo in Git Hub
+--> git clone https://github.com/Shahul1507/terraform.git
+
 terraform file extension is .tf
 
 provider.tf --> where you can declare what provider you are using
 
+AWS provider.tf (vscode-terraform/provider.tf)
+----------------
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+      version = "5.67.0"
+    }
+  }
+}
+
+provider "aws" {
+  # Configuration options
+}
+
+-->Here we need to provide authentication -- this is done by aws configure in git bash
+-->region to privider "aws" 
+	terraform {
+	  required_providers {
+		aws = {
+		  source = "hashicorp/aws"
+		  version = "5.67.0"
+		}
+	  }
+	}
+
+	provider "aws" {
+	  # Configuration options
+	  region = "us-east-1"
+	  
+	}
+
+------------------------------------
+ec2.tf (vs-code -- terraform/ec2.tf)
+------------------------------------
+--> to create ec2 instance we need security group
+--> security group (https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/security_group)
+--> instance (https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance)
+
+HCL Syntax:
+-----------
 resource "resource-type" "name-of-resource" {
 	key = value
 }
@@ -83,6 +128,8 @@ egress --> outgoing traffic
 
 while entering cabin you have to scan your ID...while exit the cabin just push the switch
 
+Commands:
+-------------
 terraform init --> intialise terraform, it will connect with provider and downloads it
 keep .gitignore always
 
@@ -92,7 +139,13 @@ terraform apply -->
 
 terraform apply -auto-approve
 
-
+terraform destroy -auto-approve
+1.it destroys -ec2instance 
+2.it destroys security group  
+because ec2 is dependent on security group
+---------------------
+Creating ec2 instance
+---------------------
 name
 ami
 sg-id
