@@ -1,13 +1,17 @@
-Recap
-----------------
-Linux Servers
-3 tier --> 
+								------------- 
+								| TERRAFORM |  
+								-------------
+								    DAY-1
+								  CONTENTS	
+								--------------
+								IaaC advantages
+								Terraform installation
+								EC2 and SG creation (Ref. SESSION-22.1 for code)
 
-Shell scripting
-Ansible
-
+Note-Link: (https://vijaycodes.hashnode.dev/fundamentals-of-terraform)
 Terraform --> IaaC ("Infrastructure as a code" developed by Hashicorp.)
-----------------
+HCL --> Hashicorp configuration language
+----------------	
 EC2
 R53
 IAM users
@@ -37,14 +41,14 @@ easy syntax
 no sequence
 state management --> Terraform can track what it created, can update easily
 
-mysql --> mysqlll
 
 
-HCL --> Hashicorp configuration language
+
+
 
 Download terraform
 keep terraform.exe in some folder
-edit the environment variables, provide the path
+edit the environment variables in windows, provide the path
 
 aws configure --> AWS command line install
 https://awscli.amazonaws.com/AWSCLIV2.msi
@@ -73,7 +77,7 @@ terraform file extension is .tf
 
 provider.tf --> where you can declare what provider you are using
 
-AWS provider.tf (vscode-terraform/provider.tf)
+(AWS) provider.tf (vscode-terraform/provider.tf)
 ----------------
 terraform {
   required_providers {
@@ -90,6 +94,7 @@ provider "aws" {
 
 -->Here we need to provide authentication -- this is done by aws configure in git bash
 -->region to privider "aws" 
+
 	terraform {
 	  required_providers {
 		aws = {
@@ -110,39 +115,61 @@ ec2.tf (vs-code -- terraform/ec2.tf)
 ------------------------------------
 --> to create ec2 instance we need security group
 --> security group (https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/security_group)
+	--> Under security group:
+        -------------------- 	
+		name
+		description
+		ingress mandatory
+		egress mandatory
+
+		ingress --> incoming traffic --> inbound traffic, which is controlled by inbound rules in     -------                                           security group
+		egress --> outgoing traffic --> outbound traffic, which is controlled by outbound rules in -------                                           security group 
+
 --> instance (https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance)
 
+-----------
 HCL Syntax:
 -----------
-resource "resource-type" "name-of-resource" {
-	key = value
-}
+		resource "resource-type" "name-of-resource" {
+			key = value
+		}
 
-name
-description
-ingress mandatory
-egress mandatory
 
-ingress --> incoming traffic
-egress --> outgoing traffic
-
-while entering cabin you have to scan your ID...while exit the cabin just push the switch
-
-Commands:
--------------
+Terraform Commands:
+------------------
 terraform init --> intialise terraform, it will connect with provider and downloads it
-keep .gitignore always
+-------------       keep .gitignore always in 
 
 terraform plan --> cant create resources. it will just plan
+--------------
 
-terraform apply --> 
+terraform apply --> (with approval)
+----------------
+will get the below mentioned message after 
+		(Do you want to perform these actions?
+		  Terraform will perform the actions described above.
+		  Only 'yes' will be accepted to approve.
 
-terraform apply -auto-approve
+		  Enter a value: )
 
-terraform destroy -auto-approve
+terraform apply -auto-approve (skips the approval without typing "yes" )
+-----------------------------
+
+
+terraform destroy--> (destroys the infra with approval)
+------------------
+Do you really want to destroy all resources?
+  Terraform will destroy all your managed infrastructure, as shown above.
+  There is no undo. Only 'yes' will be accepted to confirm.
+
+  Enter a value: 
+
+terraform destroy -auto-approve (skips the approval without typing "yes" )
+-------------------------------
 1.it destroys -ec2instance 
 2.it destroys security group  
 because ec2 is dependent on security group
+
 ---------------------
 Creating ec2 instance
 ---------------------

@@ -21,7 +21,7 @@ EXPENSE PROJECT USING ANSIBLE ROLES :
 ---> connect to remote tool (mobaxterm)to ansible-server
 ---> install ansible in it (sudo dnf install ansible -y)
 ---> create user (ansible-user) in IAM (Identity and access management)
----> "aws configure" command and give access key,secret key and region  
+---> "aws configure" command and give access key,secret key and region from Iam AWS user 
 ---> we can use modify roles in ec2 instances in actions --> security --> modify IAM role 
 ---> clone the repo to the git bash (git clone https://github.com/Shahul1507/expense-ansible-roles.git)
 ---> cd expense-ansible-roles
@@ -33,19 +33,10 @@ ansible.cfg (Generally configuration files are present in /etc folder)
 ---------------
 /etc/ansible/ansible.cfg
 
-1. ANSIBLE_CONFIG
-2. Current working directory
-3. user home directory
-4. etc 
-
-ANSIBLE_CONFIG (environment variable if set)
-
-ansible.cfg (in the current directory)
-
-~/.ansible.cfg (in the home directory)
-
-/etc/ansible/ansible.cfg
-
+1. ANSIBLE_CONFIG (environment variable if set)
+2. ansible.cfg (in the current directory) 
+3 ~/.ansible.cfg (in the home directory)
+4. etc (/etc/ansible/ansible.cfg)
 
 jinja2 --> templating langugage
 -------------------------------
