@@ -1,0 +1,232 @@
+								------------- 
+								| TERRAFORM |  
+								-------------
+								    DAY-2
+							    -------------		
+								| CONTENTS	|
+								-------------													
+Note-Link: (https://vijaycodes.hashnode.dev/fundamentals-of-terraform)
+
+1.Variables
+2.Conditions
+3.Data types
+4.outputs
+4.loops
+  I.count based loop
+5.functions
+
+------------
+1.Variables    (Link:https://developer.hashicorp.com/terraform/language/values/variables)
+------------
+--> variable is container that holds value... (x=1, y=2 -- x & Y are variables and 1 & 2 are values)
+
+			Example:
+			---------
+			shell script:   PERSON=Ramesh
+
+			ansible:        vars:
+							   PERSON: Ramesh
+				
+			terraform:	    variable "person"{
+								default = "Ramesh"
+								type = string
+							}
+Steps: (terraform/variables/Variable.tf)
+------							
+---> create folder under terraform in workspace(vs code)
+					terraform 
+					- variables
+					  -ec2.tf
+					  -provider.tf (it should be present in all folders)
+					  -variables.tf            
+--> ref:(session-23.1(variable.tf))
+--> ref:(session-23.2(ec2.tf)) # updated with variable declaration
+--> git commit( git add . ; git commit -m "terraform"; git push origin main)
+--> cd variables
+--> terraform init
+--> terraform plan
+--> terraform apply -auto-approve
+
+
+Datatypes:
+---------
+string
+number
+list [ --> list is represented
+map  { --> map is represented
+boolean (true|false) ()
+
+
+
+
+Tagging Strategy
+----------------------
+Project     : Expense          
+Component/Module : Mysql
+				   Backend
+				   frontend
+Environment	: DEV
+			  PROD					
+									  
+Example of Tagging strategy:
+							#tags
+							variable "tags" {
+							  type        = map
+							  default     = {
+								 Name = "backend"
+								 project = "expense"
+								 component = "backend"
+								 environment = "DEV"
+								 terraform = "true"
+							  } 
+							  
+							}
+
+terraform.tfvars : (https://spacelift.io/blog/terraform-tfvars)
+--------------------
+using this file, we can override the default values in variables or else you can set the values also.
+
+terraform.tfvars and default values:  
+-----------------------------------
+If we run the both variables:
+1.preference : terraform.tf vars
+2.preference : default 
+
+preferences:(Ref. link: https://developer.hashicorp.com/terraform/language/values/variables)
+------------
+1. command line : (t3.micro)
+   -------------
+   syntax: (terraform plan -var="image_id=ami-abc123")
+   example: (terraform plan -var="instance_type=t3.micro")
+   
+2. terraform.tfvars:(t2.small)
+   ---------------- 
+    instance_type = "t2.small"
+	
+3. environment variables : (t3.large)
+   ---------------------
+   syntax: (export TF_VAR_image_id=ami-abc123)
+   example: (export TF_VAR_instance_type=t3.large)
+   to unset instance_type :(unset TF_VAR_instance_type )
+   terraform plan
+
+4. default: (t3.small)
+   -------
+		variable "instance_type" {
+		  type        = string
+		  default     = "t3.micro"   
+5. Prompt:
+-----------
+     --> unset the instance_type :(unset TF_VAR_instance_type )   
+	 --> comment default and terraform.tfvars instance types
+	 --> terraform plan
+Here, prompt for instance_type will be displayed as no instance_type is assigned
+prompt will be displayed in all stages: terraform plan ,terraform apply, terraform destroy
+    	
+			var.instance_type
+			  Enter a value:
+
+         		 
+-------------
+2.conditions :
+-------------
+
+if (expression){
+	run this if expression is true
+}
+else{
+	run this if expression if false
+}
+
+expression ? "run this if true" : "run this if false"
+
+environment is prod t3.small or t3.micro
+
+Steps: (terraform/conditions)
+------							
+---> create folder under terraform in workspace(vs code)
+					terraform 
+					- conditions
+					  -ec2.tf
+					  -provider.tf (it should be present in all folders)
+					  -variables.tf 
+    ----> ec2.tf
+         --------
+        resource "aws_instance" "terraform" {
+
+			  ami = "ami-09c813fb71547fc4f"
+			  instance_type = var.environment == "prod" ? "t3.small" : "t3.micro" #condition
+			  vpc_security_group_ids = [aws_security_group.allow_ssh_terraform.id]
+			  tags = {
+				Name = "terraform"
+			  }
+			}		 
+	----> variables.tf
+         -------------
+        variable "environment" {
+		   type = "string"
+		   default = "dev"
+		} 	
+--->terraform init
+--->terraform plan (instance_type = var.environment == "prod" ? "t3.small" : "t3.micro")
+    --> change (default = "prod") to (default = "dev")
+--->terraform plan	
+---------------------
+3.Terraform outputs | (https://developer.hashicorp.com/terraform/language/values/outputs)
+---------------------
+	In Terraform, the (outputs.tf) file is used to define output values. These output values are a way to extract and display information about your infrastructure resources after Terraform has applied your configuration
+	Every resource exports some values, we can take them and create other resources
+
+		Syntax: 
+		-------
+         output "instance_ip_addr" {
+           value = aws_instance.server.private_ip
+         }
+        Example:
+		--------
+			output "puplic_ip" {
+			  value       = "aws_instance.terraform.public_ip"
+			  sensitive   = false
+			  description = "this is the public IP of instance created "
+			  
+			}		
+--------
+4.loops | 
+--------
+1. count based loop (https://developer.hashicorp.com/terraform/language/meta-arguments/count)
+2. for or for each
+
+		Special variable: [count.index] 
+		------------------------------
+				count.index --> 0
+				count.index --> 1
+				count.index --> 2
+
+-------------
+5.functions |  (https://developer.hashicorp.com/terraform/language/functions)
+-------------
+Terraform has no custom functions, We must use in-built functions
+
+merge --> merges 2 lists
+
+list-1 --> name=siva, course=devops
+list-2 --> name=siva, course=terraform, duration=120hr
+list-3 --> name=kumar, course=aws
+merge(list-1,list-2)
+
+name=siva, course=terraform
+name=kumar, course=aws, duration=120
+
+Expense Project:
+-----------------
+3 ec2 instances: mysql,backend,frontend
+r53 records:mysql.daws81s.online --> pvt ip
+            backend.daws81s.online --> pvt ip
+            daws81s.online --> public ip
+
+without .gitigore
+
+git add git commit git push
+
+500Mb file push
+

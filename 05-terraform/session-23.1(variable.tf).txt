@@ -18,7 +18,7 @@ Variables: declaring variables to ec2 & Security-group fields
 		#tags
 		variable "tags" {
 		  type        = map
-		  default     = {
+		  default     = {sta
 			 Name = "backend"
 			 project = "expense"
 			 component = "backend"
@@ -61,3 +61,21 @@ Variables: declaring variables to ec2 & Security-group fields
 		}
 
 
+conditions:
+----------
+(variable.tf):  
+------------ 
+variable "environment" {
+  type        = string
+  default     = "dev"
+  description = "instance type in dev "
+}
+    
+output.tf:
+---------
+	        output "puplic_ip" {
+			  value       = "aws_instance.terraform.public_ip"
+			  sensitive   = false
+			  description = "this is the public IP of instance created "
+			  
+			}
