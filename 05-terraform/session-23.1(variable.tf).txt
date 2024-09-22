@@ -79,3 +79,28 @@ output.tf:
 			  description = "this is the public IP of instance created "
 			  
 			}
+			
+loops:
+------
+count : (variable.tf)
+-----			
+variable "instance_names" {
+  type        = list(string)
+  default     = ["mysql","backend","frontend"]
+}
+
+functions:
+----------
+variable.tf
+------------
+common_tags:
+--------------
+variable "common_tags" {
+  type = map
+  default = {
+    Project = "expense"
+    Environment = "dev"
+    Terraform = "true"
+  }
+
+}

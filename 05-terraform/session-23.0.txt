@@ -92,39 +92,39 @@ If we run the both variables:
 1.preference : terraform.tf vars
 2.preference : default 
 
-preferences:(Ref. link: https://developer.hashicorp.com/terraform/language/values/variables)
-------------
-1. command line : (t3.micro)
-   -------------
-   syntax: (terraform plan -var="image_id=ami-abc123")
-   example: (terraform plan -var="instance_type=t3.micro")
-   
-2. terraform.tfvars:(t2.small)
-   ---------------- 
-    instance_type = "t2.small"
+	preferences:(Ref. link: https://developer.hashicorp.com/terraform/language/values/variables)
+	------------
+	1. command line : (t3.micro)
+	-------------
+	syntax: (terraform plan -var="image_id=ami-abc123")
+	example: (terraform plan -var="instance_type=t3.micro")
 	
-3. environment variables : (t3.large)
-   ---------------------
-   syntax: (export TF_VAR_image_id=ami-abc123)
-   example: (export TF_VAR_instance_type=t3.large)
-   to unset instance_type :(unset TF_VAR_instance_type )
-   terraform plan
+	2. terraform.tfvars:(t2.small)
+	---------------- 
+		instance_type = "t2.small"
+		
+	3. environment variables : (t3.large)
+	---------------------
+	syntax: (export TF_VAR_image_id=ami-abc123)
+	example: (export TF_VAR_instance_type=t3.large)
+	to unset instance_type :(unset TF_VAR_instance_type )
+	terraform plan
 
-4. default: (t3.small)
-   -------
-		variable "instance_type" {
-		  type        = string
-		  default     = "t3.micro"   
-5. Prompt:
------------
-     --> unset the instance_type :(unset TF_VAR_instance_type )   
-	 --> comment default and terraform.tfvars instance types
-	 --> terraform plan
-Here, prompt for instance_type will be displayed as no instance_type is assigned
-prompt will be displayed in all stages: terraform plan ,terraform apply, terraform destroy
-    	
-			var.instance_type
-			  Enter a value:
+	4. default: (t3.small)
+	-------
+			variable "instance_type" {
+			type        = string
+			default     = "t3.micro"   
+	5. Prompt:
+	-----------
+		--> unset the instance_type :(unset TF_VAR_instance_type )   
+		--> comment default and terraform.tfvars instance types
+		--> terraform plan
+	Here, prompt for instance_type will be displayed as no instance_type is assigned
+	prompt will be displayed in all stages: terraform plan ,terraform apply, terraform destroy
+			
+				var.instance_type
+				Enter a value:
 
          		 
 -------------
