@@ -123,7 +123,7 @@ ec2.tf (vs-code -- terraform/ec2.tf)
 		egress mandatory
 
 		ingress --> incoming traffic --> inbound traffic, which is controlled by inbound rules in     -------                                           security group
-		egress --> outgoing traffic --> outbound traffic, which is controlled by outbound rules in -------                                           security group 
+		egress --> outgoing traffic --> outbound traffic, which is controlled by outbound rules in -------                                           security  group 
 
 --> instance (https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance)
 

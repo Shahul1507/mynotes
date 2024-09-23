@@ -125,7 +125,7 @@ If we run the both variables:
 			
 				var.instance_type
 				Enter a value:
-
+        --> if skipped, the default instance_type is "m1.small"
          		 
 -------------
 2.conditions :
