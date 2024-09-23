@@ -15,6 +15,7 @@ Note-Link: (https://vijaycodes.hashnode.dev/fundamentals-of-terraform)
   I.count based loop
 5.functions
 
+
 ------------
 1.Variables    (Link:https://developer.hashicorp.com/terraform/language/values/variables)
 ------------
