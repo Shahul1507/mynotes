@@ -41,19 +41,27 @@ easy syntax
 no sequence
 state management --> Terraform can track what it created, can update easily
 
+Below is the environment setup.
 
+Softwares Required:
+-----------------
+-->VS Code
+-->Terraform
+-->AWS CLI V2(https://awscli.amazonaws.com/AWSCLIV2.msi)
 
+Steps:
+------
+-->Create IAM administrator user. Copy the access key and secret key. Don't push to any GitHub or internet.
+-->Configure user in your laptop using command:aws configure
+-->Download terraform.keep terraform.exe in some folder (c:\softwares)
+-->Add the terraform path to system environment variables.
+   --> control panel 
+       -environment variables 
+        -environment variables 
+	     -edit
+          -variable name: terraform
+          -variable path: C:\softwares (path of terraform.exe )
 
-
-
-Download terraform
-keep terraform.exe in some folder
-edit the environment variables in windows, provide the path
-
-aws configure --> AWS command line install
-https://awscli.amazonaws.com/AWSCLIV2.msi
-
-Resources
 
 Terraform --> AWS, AZure, GCP, Alibaba, Digital Ocean, etc. GitHub, Networking, etc. These are the providers
 ----------
@@ -138,8 +146,10 @@ HCL Syntax:
 Terraform Commands:
 ------------------
 terraform init --> intialise terraform, it will connect with provider and downloads it
--------------       keep .gitignore always in 
-
+-------------       keep (.gitignore) always in terraform folder
+                    -->follow: https://github.com/github/gitignore/blob/main/Terraform.gitignore
+                    -->create .gitignore file in terraform folder (vs-code)
+                    -->copy raw file to .git ignore
 terraform plan --> cant create resources. it will just plan
 --------------
 

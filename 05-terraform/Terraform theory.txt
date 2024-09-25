@@ -1,0 +1,67 @@
+TERRAFORM 
+—-----------------
+Small understanding from today class
+
+1-what is terraform
+
+	Terraform is an open-source Infrastructure as Code (IaC) tool developed by HashiCorp.
+	It allows users to define and manage cloud infrastructure resources such as servers, databases, and networking using a declarative configuration language. By writing code and we can automate.
+
+2-what is the basic work flow of terraform
+
+	-Write infrastructure configuration (main.tf)
+
+	-Initialize with terraform init to set up the environment.
+
+	-Generate a plan with terraform plan to review changes.
+
+	-Apply the plan with terraform apply to deploy infrastructure.
+
+	-Manage or destroy resources with terraform destroy when no longer needed.
+
+3-what are the terraform commands
+
+	>terraform init- Initializes a Terraform project
+	>terraform plan- Creates an execution plan
+	>terraform apply- Applies the changes required to reach the desired state of the configuration
+	>terraform destroy- Removes all resources defined in the configuration
+	>terraform fmt- Formats Terraform configuration files according to a canonical standard, ensuring code is clean and easy to read.
+	>terraform validate- Validates the configuration files, checking for syntax errors and ensuring that they are syntactically correct.
+	>terraform show- Displays the current state or details of a specific plan or state file.
+	>terraform state- Manages Terraform's state file, allowing you to inspect, manipulate, and fix issues in the state manually.
+	>terraform output- Displays the output values defined in your configuration after an apply
+	>terraform import- Imports existing infrastructure into Terraform state, allowing you to manage resources that were not originally created by Terraform.
+	>terraform taint- Marks a resource as tainted, forcing it to be destroyed and recreated on the next apply.
+	>terraform workspace- Manages multiple Terraform workspaces (isolated state environments), allowing for different environments.
+	>terraform init -reconfigure- Terraform to reinitialize everything from scratch, including reconfiguring the backend without using any previous settings.
+	>terraform init -backend-config- command is used to provide a custom backend configuration during the initialization process in Terraform. It allows you to specify backend settings
+	>terraform init -upgrade- It is usually used to upgrade the latest version of the module source code.
+	>terraform plan -var-file- command is used to pass a file containing input variable values to the terraform plan command
+
+4-what is Root Module Child Modules
+
+	Root Module This is the main working directory where you run Terraform commands. It can include other modules.
+	Child Module A reusable, independently defined module that can be called by the root module or other modules.
+
+5-what is remote state
+
+	Terraform is a way to store the current status of your infrastructure (like what resources are running) in a central location, rather than on your local machine.
+	This is allows multiple team members to access and update the same state file, helping to avoid conflicts and ensuring everyone is on the same page.
+
+6-what is desired state and current state
+
+	Desired state-the desired state is what you want your infrastructure to look like. It's defined in your Terraform configuration files.
+	where you specify things like which servers, databases, and networks you want to create and how you want them configured. Essentially, it's your blueprint for your infrastructure.
+
+	Current status-the current state is the actual setup of your infrastructure at any given moment. It reflects what resources are currently deployed and their configurations.
+
+7-what is terraform import
+
+	Terraform import is a command that allows you to bring existing infrastructure into Terraform's management.
+	we can use the import command to link those resources to your Terraform configuration.
+
+8-what is the difference between normal variables declaration and locals 
+
+	Normal variables They are used to accept input values when you run your Terraform configurations. You can pass different values each time you apply the configuration.
+
+	Locals They are used to define reusable values or expressions that you want to use within your configuration. Locals can help simplify complex expressions and make your code cleaner.
