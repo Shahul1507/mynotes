@@ -37,7 +37,9 @@ Small understanding from today class
 	>terraform init -backend-config- command is used to provide a custom backend configuration during the initialization process in Terraform. It allows you to specify backend settings
 	>terraform init -upgrade- It is usually used to upgrade the latest version of the module source code.
 	>terraform plan -var-file- command is used to pass a file containing input variable values to the terraform plan command
-
+	>terraform init -migrate-state -If you wish to attempt automatic migration of the state
+	
+	
 4-what is Root Module Child Modules
 
 	Root Module This is the main working directory where you run Terraform commands. It can include other modules.
