@@ -1,0 +1,61 @@
+TERRAFORM
+---------
+provider.tf
+--------------
+	terraform {
+	  required_providers {
+		aws = {
+		  source = "hashicorp/aws"
+		  version = "5.67.0"
+		}
+	  }
+		backend "s3" {
+		bucket = "81s-remote-bucket"
+		key    = "remote-state-demo" #every repo should have unique key
+		region = "us-east-1"
+		dynamodb_table = "81s-locking"
+	  }
+	}
+
+	provider "aws" {
+	  # Configuration options
+	  region= "us-east-1"
+	}
+
+ec2.tf
+------
+	resource "aws_security_group" "allow_ssh_terraform" {
+		name = "allow_sshh" # allow_ssh is already present in my aws account
+		description = "allow port number 22 for SSH access"
+
+		egress {
+			from_port        = 0
+			to_port          = 0
+			protocol         = "-1" # -1 means all
+			cidr_blocks      = ["0.0.0.0/0"]
+			ipv6_cidr_blocks = ["::/0"]
+		}
+
+		ingress {
+			from_port        = 22
+			to_port          = 22
+			protocol         = "tcp"
+			cidr_blocks      = ["0.0.0.0/0"] # allow from everyone
+			ipv6_cidr_blocks = ["::/0"]
+		}
+
+		
+		tags = {
+			Name = "allow_sshh"
+		}
+	}
+
+	resource "aws_instance" "terraform" {
+
+	  ami = "ami-09c813fb71547fc4f"
+	  instance_type = "t3.micro"
+	  vpc_security_group_ids = [aws_security_group.allow_ssh_terraform.id]
+	  tags = {
+		Name = "terraform"
+	  }
+	}

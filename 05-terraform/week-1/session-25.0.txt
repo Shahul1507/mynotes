@@ -11,7 +11,7 @@
 					--->     remote state
 					--->     locking
 
-
+Note link: (https://vijaycodes.hashnode.dev/fundamentals-of-terraform#heading-terraform-locals)
 
 expense-1
 ---------
@@ -44,75 +44,138 @@ var.instance_names = backend
 domain_name = daws81s.online
 
 terraform  fmt  ---   Reformat your configuration in the standard style
+--------
+LOCALS |
+--------
+note link: (https://vijaycodes.hashnode.dev/fundamentals-of-terraform#heading-terraform-locals)
+	locals are like variables but it have some extra capabilities. You can store expressions and intermediate values in locals
 
-locals
----------------------
-locals are like variables but it have some extra capabilities. You can store expressions and intermediate values in locals
+	variables can be overriden
+	but we can't override locals
 
-variables can be overriden
-but we can't override locals
+	comparison variable & locals
+	----------------------------
+		1. variables and locals both can store values, but locals have some extra capabilities
+		2. locals can store expressions, terraform can run them and get the value
+		3. locals can use variables inside. variables can't refer locals
+		4. can override variables, can't override locals
+		5. (count.index) will not work in locals,we need to use variables for it
+	Steps: (terraform/locals)
+    ------							
+	---> create folder under terraform in workspace(vs code)
+						terraform 
+						- locals
+						  -locals.tf
+						  -variables.tf
+					      -data.tf
+						  -ec2.tf
+						  -r53.tf
+						  -provider.tf (it should be present in all folders)
+						  -output.tf
+						  						 
+	--> terraform init
+	--> terraform plan
+	--> terraform apply -auto-approve 					  	
+---------------------------------
+STATE, REMOTE STATE AND LOCKING | 
+---------------------------------
+note link:(https://vijaycodes.hashnode.dev/fundamentals-of-terraform#heading-state-remote-state-locking)
+	-->If need to change the instance name from(mysql --> mysqllll)
+	-->it is a simple name update, but ansible created another instance
+	-->in terraform,it just overwrites the changes instead of creating the new instance
 
-comparison variable & locals
-----------------------------
-1. variables and locals both can store values, but locals have some extra capabilities
-2. locals can store expressions, terraform can run them and get the value
-3. locals can use variables inside. variables can't refer locals
-4. can override variables, can't override locals
-5. count.index will not work in locals
+	declared infra, actual infra
 
-state, remote state and locking
----------------------
-mysql --> mysqllll
+	terraform == declarative way of creating infra
 
-it is a simple name update, but ansible created another instance
+		tf files == infra I declared
+		aws infra == actual infra created
 
-assignment
----------------
-I will check your notes and confirm whether you completed or not
+	declared infra == actual infra
 
-declared infra, actual infra
+	terraform.tfstate == terraform keeps track of what it created 
 
-terraform == declarative way of creating infra
+	aws_security_group.allow_ssh_terraform: Refreshing state... [id=sg-0994f93b69e9e3736]
 
-tf files == infra I declared
-aws infra == actual infra created
+	before I delete
+	----------------
+	declared infra == actual infra --> true
 
-declared infra == actual infra
+	After I delete
+	----------------
+	declared infra == actual infra --> false
 
-terraform.tfstate == terraform keeps track of what it created
+	terraform.tfstate --> instance created
+	real infra --> no, actually destroyed
+	config files --> create the infra
 
-aws_security_group.allow_ssh_terraform: Refreshing state... [id=sg-0994f93b69e9e3736]
+	terraform.tfstate will be refereshed against real infra
 
-before I delete
-----------------
-declared infra == actual infra --> true
+-------------
+remote state | (interview)
+-------------
 
-After I delete
-----------------
-declared infra == actual infra --> false
+	If multiple people working on same project collaboratively , If one person trying to create a infra and same time another person with same details trying to create infra it will duplicates infra or create errors.	
+										 ----------------
+						 --------------> | REMOTE STATE | <--------
+						|                ----------------          |
+						|                       |                  |
+					 -------             ---------------        --------- 
+					|laptop1|            | aws account |       | laptop2 |
+					 -------             ---------------	    ---------				
+	If remote state is maintained , if one person already created the infra in AWS then when another person trying to create with same details , remote state will update that infra is already created
+	
+--------	
+locking: 
+--------
+.lock --> programs will check if any .lock file is there in local, it will not allow others to edit 
+ 
+ Terraform acquires a state lock to protect the state from being written by multiple users at the same time.
+  giving the error:
+  -----------------
 
-terraform.tfstate --> instance created
-real infra --> no, actually destroyed
-config files --> create the infra
+			│ Error: Error acquiring the state lock
+			│
+			│ Error message: Failed to read state file: The state file could not be read:
+			│ read terraform.tfstate: The process cannot access the file because another
+			│ process has locked a portion of the file.
+			│
+			│ Terraform acquires a state lock to protect the state from being written
+			│ by multiple users at the same time. Please resolve the issue above and try
+			│ again. For most commands, you can disable locking with the "-lock=false"
+			│ flag, but this is not recommended.
+			╵
+	 -->every local will have .state file,which will be locked while its in use .Others, cannot    run it at the same time.
+	 --> to over come this, remote locking concept
+ This can be done in aws through:
+ --------------------------------
+	-->remote storage --> s3 bucket
+	-->locking --> dynamo DB --> LockID
 
+steps:
+-----
+--> remote state: (https://developer.hashicorp.com/terraform/language/state/remote:
 
-terraform.tfstate will be refereshed against real infra
+-->In AWS —> search “dynamo DB” —> Click Tables —> enter table name —> In partition key enter 
+  “LockID” —> click create table.
 
-remote state
-----------------
-I am creating infra from my laptop --> it will create infra
-another person also tries to crate --> it will also create infra again
+-->In AWS —> search “S3” —> Click create bucket —> Enter name —> Click create bucket.
 
-duplicates or errors
+-->In Expense project , we have to make changes in provider.tf that state information should have
+   to save in remote place.
 
-.lock --> programs will check if any .lock file is there, it will not allow others to edit 
+-->Google Search “Terraform remote state S3” —>
+   https://developer.hashicorp.com/terraform/language/backend/s3
 
-remote storage --> s3 bucket
-locking --> dynamo DB --> LockID
-
-81s-locking
-81s-remote-state
-
+-->Update provider.tf
+         example: terraform {
+					  backend "s3" {
+						bucket = "mybucket"
+						key    = "path/to/my/key"
+						region = "us-east-1"
+						dynamodb_table = "table name"
+					  }
+					}
 
 
 

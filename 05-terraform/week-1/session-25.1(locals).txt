@@ -1,2 +1,127 @@
 Terraform:
 ---------
+locals.tf
+---------
+	 locals {
+	   domain_name = "shahul.online"
+	   zone_id = "Z06321023RSPR3MPYN5JW"
+	   instance_type = var.environment == "prod" ? "t3.medium" : "t3.micro"
+	 }
+------------	 
+variables.tf
+------------
+	variable "instance_names" {
+	  type    = list(string)
+	  default = ["mysql", "backend", "frontend"]
+
+	}
+	# variable "zone_id" {
+	#   default = "Z06321023RSPR3MPYN5JW" # r53 zone id from hosted zones
+	# }
+
+	# variable "domain_name" {
+	#   default = "shahul.online"
+	# }
+
+	variable "environment" {
+	  type        = string
+	  default     = "prod"
+	  description = "instance type in prod "
+	}
+-------
+data.tf
+------- 
+	data "aws_ami" "ami_info" {
+
+	  most_recent = true
+	  owners      = ["973714476881"] #owner account ID
+
+	  filter {
+		name   = "name"
+		values = ["RHEL-9-DevOps-Practice"]`
+	  }
+
+	  filter {
+		name   = "root-device-type"
+		values = ["ebs"]
+	  }
+
+	  filter {
+		name   = "virtualization-type"
+		values = ["hvm"]
+	  }
+	}
+------
+ec2.tf
+------
+	resource "aws_instance" "terraform" {
+	  count                  = length(var.instance_names)
+	  ami                    = data.aws_ami.ami_info.id
+	  instance_type          = var.instance_names[count.index] == "mysql" ? "t3.small" : "t3.micro"
+	  vpc_security_group_ids = [aws_security_group.allow_ssh_terraform.id]
+	  tags = {
+		Name = var.instance_names[count.index]
+	  }
+	}
+
+	resource "aws_security_group" "allow_ssh_terraform" {
+	  name        = "allow_sshh" # allow_ssh is already present in my aws account
+	  description = "allow port number 22 for SSH access"
+
+	  egress {
+		from_port        = 0
+		to_port          = 0
+		protocol         = "-1" # -1 means all
+		cidr_blocks      = ["0.0.0.0/0"]
+		ipv6_cidr_blocks = ["::/0"]
+	  }
+
+	  ingress {
+		from_port        = 22
+		to_port          = 22
+		protocol         = "tcp"
+		cidr_blocks      = ["0.0.0.0/0"] # allow from everyone
+		ipv6_cidr_blocks = ["::/0"]
+	  }
+
+
+	  tags = {
+		Name = "allow_sshh"
+	  }
+	}
+
+
+
+	# # if prod create t3.medium, otherwise create t3.micro
+	# resource "aws_instance" "elasticsearch" {
+
+	#     ami = data.aws_ami.ami_info.id
+	#     instance_type = local.instance_type
+	#     vpc_security_group_ids = [aws_security_group.allow_ssh_terraform.id]
+	#     tags = {
+	#         Name = "terraform"
+	#     }
+	# }
+------
+r53.tf
+------
+	resource "aws_route53_record" "terraform" {
+	  count           = length(var.instance_names)
+	  zone_id         = local.zone_id
+	  name            = var.instance_names[count.index] == "frontend" ? local.domain_name : "${var.instance_names[count.index]}.${local.domain_name}"
+	  type            = "A"
+	  ttl             = 1
+	  records         = var.instance_names[count.index] == "frontend" ? [aws_instance.terraform[count.index].public_ip] : [aws_instance.terraform[count.index].private_ip]
+	  allow_overwrite = true
+	}
+---------	
+output.tf
+---------
+	# use output.instances_info
+	# output.instances_info == aws_instance.expense
+
+	output "instance_info" {
+	  value = aws_instance.terraform
+
+	}
+		
