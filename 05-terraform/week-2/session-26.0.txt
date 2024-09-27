@@ -1,0 +1,137 @@
+					            ------------- 
+								| TERRAFORM |  
+								-------------
+								    DAY-5
+							    -------------		
+								| CONTENTS	|
+								-------------	
+                    --->     Recap 
+					--->     For each loop
+					--->     Dynamic loop
+					--->     Provisioners			
+					--->     Quiz
+
+Recap
+------
+    Terraform
+    ------------
+    IaaC advantages
+    variables
+    data types
+    conditions
+    loops --> count based loop, count.index --> used for lists
+    functions
+
+    locals --> to store expressions
+    outputs --> provide the output of resources, like IP, id, etc.
+    data sources --> query the information from provider like AMI ID, etc.
+    state and remote state --> terraform uses state concept to compare declared vs actual/real infra. We keep state remotely in colloboration envrionment.
+    locking --> make sure infra provisioning is not running parellely
+    tfvars --> to override default variables
+--------
+ loops | 
+-------------  
+For each loop: for each is used to iterate map. map starts with({)
+-------------
+
+    Requirement:
+    ------------
+    expense infra
+    -------------
+    frontend -> t3.micro
+    backend --> t3.micro
+    mysql --> t3.small
+    [] --> list
+    {} --> map
+
+    if frontend name should be daws81s.online otherwise backend/mysql.daws81s.online
+
+    Steps: (terraform/for_each-loop)
+    ------							
+    ---> create folder under terraform in workspace(vs code)
+                        terraform 
+                        -for_each
+                            -providers.tf
+                            -variables.tf                      
+                            -ec2.tf
+                            -r53.tf                      
+                            -output.tf
+    --> code : check (session-26.1.txt)
+    --> terraform init
+    --> terraform plan
+    --> terraform apply -auto-approve 
+------------
+dynamic loop:
+------------ 
+In Terraform, dynamic blocks are used to dynamically generate nested content within a resource or module, allowing to iterate over lists to create repeated configurations.
+when ever a multiple blocks needed in aws_security_group we use terraform dynamic block
+    link for ref.(https://www.cloudbolt.io/terraform-best-practices/terraform-dynamic-blocks/)
+
+    Steps: (terraform/dynamic)
+    ------							
+    ---> create folder under terraform in workspace(vs code)
+                        terraform 
+                        -dynamic-loop
+                            -providers.tf
+                            -variables.tf                      
+                            -sg.tf
+                            
+    --> code : check (session-26.2.txt)
+    --> terraform init
+    --> terraform plan
+    --> terraform apply -auto-approve 
+-----------------
+provisioners :
+------------------
+    -->provisioners are used to model specific actions on the local machine or on a remote machine in order to prepare servers or other infrastructure objects for service.
+    --> in short,provisioners are used to take some actions locally or remotely..
+
+    local --> where terraform executed is local...my laptop
+    remote --> inside the servers you created..inside the servers of backend, frontend, mysql. etc.
+  
+    Steps: (terraform/provisioners)
+    ------							
+    ---> create folder under terraform in workspace(vs code)
+                        terraform 
+                        -provisioners
+                            -providers.tf
+                            -ec2.tf
+                            
+    --> code : check (session-26.3.txt)
+    --> terraform init
+    --> terraform plan
+    --> terraform apply -auto-approve 
+    
+     
+    1. local-exec  (https://developer.hashicorp.com/terraform/language/resources/provisioners/local-exec)
+    --------------
+    provisioner "local-exec" {
+        command = "echo ${self.private_ip} > public_ip.txt"
+    }
+
+
+    2. remote-exec (https://developer.hashicorp.com/terraform/language/resources/provisioners/remote-exec)
+    ---------------
+        # provisioners will execute at the time of creation
+        provisioner "remote-exec" {
+            inline = [
+                "sudo dnf install ansible -y",
+                "sudo dnf install nginx -y",
+                "sudo systemctl start nginx",
+            ]
+        }
+
+    local-exec --> execute commands in local 
+    remote-exec --> execute commands inside remote server
+ 
+    Destroy-Time Provisioners:
+    --------------------------
+    If when = destroy is specified, the provisioner will run when the resource it is defined within is destroyed. 
+     
+    provisioner "remote-exec" {
+        when    = destroy
+        inline = [
+            "sudo systemctl stop nginx",
+        ]
+    }
+

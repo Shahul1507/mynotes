@@ -1,14 +1,13 @@
-								------------- 
-								| TERRAFORM |  
-								-------------
-								    DAY-3
-							    -------------		
-								| CONTENTS	|
-								-------------	
+                                ------------- 
+                                | TERRAFORM |  
+                                -------------
+                                    DAY-3
+                                -------------		
+                                | CONTENTS	|
+                                -------------	
                     --->     TERRAFORM DATASOURCES
 
-
-
+Note link: (https://vijaycodes.hashnode.dev/fundamentals-of-terraform)
 
 Top to Bottom Approach
 ----------------------

@@ -1,0 +1,71 @@
+Ansible Modules:
+-----------------
+
+1. ansible server to reach node 
+-------------------------------
+   Module:[ssh ec2-user@<Private IP of node>]
+   
+2.connecting through Ansible (Ping)
+-----------------------------
+   Module:[ansible -i <Private IP of node>, all -e ansible_user=ec2-user -e ansible_password=DevOps321 -m ping]
+    i= Inventory
+   
+   Response:
+  [ ec2-user@ip-172-31-46-191 ~ ]$ ansible -i 172.31.21.79, all -e ansible_user=ec2-user -e ansible_password=DevOps321 -m ping
+
+172.31.21.79 | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": false,
+    "ping": "pong"
+ }
+3.module to install nginix in node server:
+----------------------------------------
+[ansible -i <private IP of node>, all -e ansilbe_user=ec2-user -e ansible_password=DevOps321 -b -m dnf -a "name=nginx state=installed"]
+
+4.Module to start nginix service in node server:
+-----------------------------------------------
+[ansible -i <private IP of node>, all -e ansilbe_user=ec2-user -e ansible_password=DevOps321 -b -m service -a "name=nginx state=started"]
+
+[ansible -vvv -i <private IP of node>, all -e ansilbe_user=ec2-user -e ansible_password=DevOps321 -b -m service -a "name=nginx state=started"]
+-a --> arguments
+-b --> become root
+-vvv --> used to debug
+
+5.To Print the information.
+---------------------------
+ansible.builtin.debug:
+
+6.To install the package and run.
+---------------------------
+ansible.builtin.package: ----Install
+ansible.builtin.service: ----run
+
+7.command module.(when ever there is no particular module ,need to use )
+--------------------------------
+ansible.builtin.command:
+
+8.install packages based on facts (based on checking the os-family through gathering facts script)
+-----------------------------	
+redhat --> ansible.builtin.dnf
+ubuntu -->  ansible.builtin.apt
+
+9.To install the python libraries
+---------------------------------
+ansible.builtin.pip:
+ex:
+ tasks:
+  - name: ansible to install pymysql
+    ansible.builtin.pip:
+      name:
+      - PyMySQL
+      executable: pip3.9
+	  
+10.module to connect with ec2-instances in aws
+-----------------------------------------------
+amazon.aws.ec2_instance:
+
+10.module to connect with route-53
+-----------------------------------------------
+amazon.aws.route53:

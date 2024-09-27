@@ -1,0 +1,13 @@
+commands
+----------
+ls -l --> to list the directory
+ls -la 
+Id --> to check the User ID 
+pwd --> present workimg directory
+cd  --> Change directory
+        cd ../filename/ --> takes to particular file in same directory
+cat --> Read the file
+ping <ip-address> --> troubling shouting command to check the connectivity betweeb two servers
+ssh-keygen -f <key file name> || ex: ssh-keygen -f linux-key 
+ssh-rsa <random code> laptop-username@laptop-name || ex: ssh-rsa <random code> 
+nslookup <domain-name> || nslookup shahul.online --->To check the status of IP in domain   

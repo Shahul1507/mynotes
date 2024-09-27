@@ -103,3 +103,30 @@ item --> reserved keyword
 
 functions/filters
 --------------------
+     Ansible allow user to write custom functions (using python language)
+
+     But 90% of cases we use built-in ansible functions in project.
+
+     https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_filters.html
+
+     Ansible filters are used to manipulate data within your playbooks. (Pipe |)
+
+     
+Command vs Shell
+------------------
+     Use command when you need to run simple commands that do not require shell features. It is more secure and should be preferred for basic tasks.
+     
+     Use shell when you need to leverage shell features like pipes, redirection, or environment variables. It provides more flexibility but should be used with caution due to potential security risks
+     
+     ansible.builtin.command 
+     ansible.builtin.shell     
+
+     example:
+     --------
+          - name: check the process
+          ansible.builtin.shell: ps -ef | grep ssh
+          register: output
+
+          - name: check the process
+          ansible.builtin.command: ps -ef | grep ssh  # will fail as pipe is there.
+          register: output

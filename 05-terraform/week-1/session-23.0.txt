@@ -192,17 +192,25 @@ Steps: (terraform/conditions)
 			  
 			}		
 --------
-4.loops | 
+4.loops | (https://developer.hashicorp.com/terraform/language/meta-arguments/count)
 --------
-1. count based loop (https://developer.hashicorp.com/terraform/language/meta-arguments/count)
-2. for or for each
+1. count based loop : used for list([]) (count.index) 
+2. for or for each : used for map ({})
 
 		Special variable: [count.index] 
 		------------------------------
 				count.index --> 0
 				count.index --> 1
 				count.index --> 2
-
+        examole:
+		--------
+		variable "instance_names" {
+			type        = list(string)
+			default     = ["mysql","backend","frontend"]
+		  }
+		tags = {
+		Name = var.instance_names[count.index]
+		}
 -------------
 5.functions |  (https://developer.hashicorp.com/terraform/language/functions)
 -------------
