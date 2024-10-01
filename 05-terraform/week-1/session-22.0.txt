@@ -9,37 +9,69 @@
 								EC2 and SG creation (Ref. SESSION-22.1 for code)
 
 Note-Link: (https://vijaycodes.hashnode.dev/fundamentals-of-terraform)
-Terraform --> IaaC ("Infrastructure as a code" developed by Hashicorp.)
-HCL --> Hashicorp configuration language
-----------------	
-EC2
-R53
-IAM users
 
-Manual Infra
------------------
-Everything in console.... by mistake if someone edit wrong, then app will go down...30min-1hr
-application restore back to previous stage if something goes wrong
+What is Terraform ..?
+------------------
+	Terraform is "Infrastructure as a code" developed by Hashicorp.
 
-Version control
+	Terraform is a declarative way of creating infrastructure.
 
-Consistent Infra --> All environment configs and infra should be some..
+			Easy Syntax.
 
-CRUD --> Create infra, read, update, deleting the infra
+			No need to follow a particular sequence of steps.
 
-Inventory/resource management --> If you see the terraform script, you know what are the services you are using
+			State Management: --> Terraform can track what it created, can update easily
 
-Cost optimisation --> creation in 5min, deletion in 5min
+	Terraform is HCL (HashiCorp configuration Language)
 
-Dependency management --> sg, ec2 instance after creation of all dependencies
+	Terraform has - Variables, Datatypes, conditions, loops, functions, data sources, locals, outputs, providers, and provisions.
 
-Code reuse --> Roles. Modules
+	Terraform can connect to AWS, Azure, Github, GCP, Alibaba, etc these are called providers.
 
-Declarative way of creating infra --> You are giving orders to terraform to create infra just by providing right syntax
+	We need to understand the services given by a provider, using that we can automate the infrastructure using a scripting language called Terraform.
 
-easy syntax
-no sequence
-state management --> Terraform can track what it created, can update easily
+	Terraform Providers : https://registry.terraform.io/browse/providers
+
+	In providers we create resources for example: In AWS we created instances, R53, and IAM these are all called resources.
+
+	Terraform file extension is .tf
+
+Problems with Manual Infrastructure: (Why Terraform ..?)
+----------------------------------------------------
+	Everything is done through the console: 
+	--------------------------------------
+	If anyone unintentionally makes any changes then the application will go gone.
+
+	Application restores to the previous state: 
+	-------------------------------------------
+	If it is taking more than 30 to 60 minutes then it is a big loss to the company.
+
+	Version control:
+	----------------
+	Infrastructure changes every day and tracking the changes is very important and it is not possible if it is done through manual infrastructure.
+
+	Consistent Infrastructure:
+	--------------------------
+	Solution working in a development environment and not working in a production environment and this can be easily done with automation.
+
+	CRUD, Inventory Management, Cost optimization, Dependency Management, and Code reuse.
+		CRUD --> Create infra, read, update, deleting the infra
+
+		Inventory/resource management --> If you see the terraform script, you know what are the services you are using
+		
+		Cost optimisation --> creation in 5min, deletion in 5min
+		
+		Dependency management --> sg, ec2 instance after creation of all dependencies
+		
+		Code reuse --> Roles. Modules
+		
+		Declarative way of creating infra --> You are giving orders to terraform to create infra just by providing right syntax
+		
+		easy syntax
+		no sequence
+		state management --> Terraform can track what it created, can update easily
+
+
 
 Below is the environment setup.
 

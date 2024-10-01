@@ -1,0 +1,239 @@
+                                        ------------- 
+                                        | TERRAFORM |  
+                                        -------------
+                                            DAY-5
+                                        -------------		
+                                        | CONTENTS	|
+                                        -------------	
+                                --->  Terraform multi environments
+                                          -Tfvars
+                                          -Workspaces
+                                          -Separate repos
+                                --->  Modules intro
+                                        
+note-link: (https://vijaycodes.hashnode.dev/terraform-multi-environment#heading-multi-environment-using-tfvars)
+Consistency across multiple environments can be achieved by
+-----------------------------------------------------------
+1. tfvars
+2. terraform workspaces
+3. seperate repos
+
+In resource defnition:
+----------------------
+    left side --> arguements
+    right side --> values
+    
+    --> arguments will not change and values will change based on the environment.
+
+    --> for example, 
+        for the dev -- instance_type = "t3.micro" 
+        for the test environment -- instance_type = "t3.mini"
+    --> Here: 
+             instance_type --- argument
+            "t3.mini" & "t3.micro" ---values
+           
+Terraform multi environments:
+----------------------------
+--> Multi-Environment using tfvars:
+   -----------------------------------
+    "tfvars" --> is used to override default variables
+
+            dev.tfvars --> this should be for dev env
+            prod.tfvars --> this should be for prod env
+    
+            using this each environment has there own default values.
+
+    backend, we have both "S3" and ‘DynamoDB’. 
+    
+     option-1. keep the same bucket but diff key
+     option-2. keep diff buckets for diff env and diff key
+    
+     Which option is more suitable for a multi-environment project?
+    “The second option is preferable because, with the first option, the bucket will be locked by the development environment, which will halt work in the production environment.”
+
+--> Expense project using Multi-Environment:
+    -------------------------------------------
+    Create two "S3 buckets"
+                 dev  - 81s-remote-bucket-dev 
+                 prod - 81s-remote-bucket-prod
+
+    Create two “DynamoDB” keys  (with partition key - LockID)
+                 dev - 81s-locking-dev 
+                 prod - 81s-locking-prod. 
+
+    Create a new project folder “terraform-multi-env” 
+        requirement:
+        ------------
+       ---> dev instances and records plan
+            ------------------------------
+                ec2instances
+                ------------i
+                mysql-dev
+                backend-dev
+                frontend-dev
+                r53 records:
+                ----------
+                mysql-dev.shahul.online
+                backend-dev.shahul.online
+                frontend-dev.shahul.online
+
+      ---> dev instances and records plan
+           ------------------------------
+                ec2instances
+                ------------i
+                mysql-prod
+                backend-prod
+                frontend-prod
+                r53 records:
+                ----------
+                mysql-prod.shahul.online
+                backend-prod.shahul.online
+                shahul.online
+
+            Steps: (terraform/terrafor-multi-env/tfvars)
+            ------							
+            ---> create folder under terraform in workspace(vs code)
+                                terraform 
+                                -terraform-multi-env
+                                  -tfvars
+                                    -dev (folder)
+                                       -backend.tf
+                                       -dev.tfvars
+                                    -prod (folder)
+                                       -backend.tf 
+                                       -prod.tfvars 
+                                    -providers.tf
+                                    -variables.tf                      
+                                    -ec2.tf
+                                    -r53.tf                      
+    Create file "backend.tf" in terraform-multi-env/tfvars/dev with following content:
+ 
+                    bucket         = "81s-remote-bucket-dev"
+                    key            = "remote-state-demo-dev"
+                    region         = "us-east-1"
+                    dynamodb_table = "81s-locking-dev"
+    
+    Create file "backend.tf" in terraform-multi-env/tfvars/prod with following content:
+    
+                    bucket = "81s-remote-bucket-prod"
+                    key    = "remote-state-demo-prod"
+                    region = "us-east-1"
+                    dynamodb_table = "81s-locking-prod"
+
+    create files "dev.tfvars" and "prod.tfavrs" in dev and prod foldsers
+    create ec2 instance ,variables,routet53 files  (ref code - session - 27.1 & 27.2 )
+
+        dev-environment
+        ----------------               
+        -cd terraform-multi-env
+        -cd tfvars
+        -terraform init -backend-config=dev/backend.tf #When working for dev environment we have set the backend config to dev using the following command
+        -terraform init -reconfigure -backend-config=dev/backend.tf
+        -terraform plan -var-file=dev/dev.tfvars
+        -terraform apply -auto-approve -var-file=dev/dev.tfvars
+        -terraform destroy -auto-approve -var-file=dev/dev.tfvars            
+                    
+        prod-environment
+        ----------------               
+        -cd terraform-multi-env
+        -cd tfvars
+        -terraform init -backend-config=prod/backend.tf #When working for prod environment we have set the backend config to dev using the following command
+        -terraform init -reconfigure -backend-config=prod/backend.tf
+        -terraform plan -var-file=prod/prod.tfvars
+        -terraform apply -auto-approve -var-file=prod/prod.tfvars
+        -terraform destroy -auto-approve -var-file=prod/prod.tfvars
+
+--> Multi-Environment using workspaces:
+   -----------------------------------
+   --> what is terraform workspace?
+
+      Terraform workspace is used when ever there is requirement of different environments,
+      it will give us terraform.workspace variable and it will keep the current environment value inside it.
+
+     -->Advantages:
+        ----------
+        Code reuse (same code in all environments)
+     
+     -->Disadvantages:
+        --------------
+        Easy-to-do errors.
+        
+        not too easy to implement.
+        
+        Maintaining the same code for dev and prod will not be a good idea.
+        
+        If the code has a problem, then the project will not be working.
+        
+        Code changes will affect all the environments.
+
+    Hence,its always preferable to have Seperate code for each environment.
+
+    Steps: (terraform/terrafor-multi-env/workspaces)
+    ------							
+    ---> create folder under terraform in workspace(vs code)
+                        terraform 
+                        -terraform-multi-env
+                          -workspaces
+                            -ec2.tf
+                            -provider.tf
+                            -variable.tf
+                            -output.tf
+    --->cd ../workspaces
+    ---> terraform workspace select dev #select concerned environment
+    ---> terraform plan
+    ---> terraform apply -auto-approve
+    ---> terraform destroy -auto-approve                        
+                       
+        seperate code for seperate env
+        -------------------------
+        It is always suggestable to have Seperate code for each environment.
+
+        1.expense-infra-dev
+        2.expense-infra-prod
+
+        disadvantage
+        --------------
+        duplicated code
+
+            Terraform workspace commands:
+            -----------------------------
+            Usage: terraform workspace [subcommnds]
+
+            new, list, show, select and delete Terraform workspaces.
+
+                Subcommands:
+                -----------
+                new      - Create a new workspace
+                list     - List Workspaces
+                show     - Show the name of the current workspace
+                select   - Select a workspace
+                delete   - Delete a workspace
+    
+            example of  ec2 instance
+                        if dev t3.micro
+                        if prod t3.medium
+                        we get ,variables as 
+                        terraform.workspace == prod
+                        terraform.workspace == dev    
+
+
+
+
+
+
+
+
+
+Module development
+------------------------
+DRY
+
+variables
+functions
+roles
+
+functions --> inputs and outputs, we call function. you can call infinite times
+write code once and call them many times...
+
+
+modules -> resource defnition and arguements are same. only values are different

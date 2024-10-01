@@ -1,0 +1,46 @@
+multi environment by workspace
+------------------------------
+--> providers.tf
+   --------------
+        terraform {
+            required_providers {
+            aws = {
+                source = "hashicorp/aws"
+                version = "5.67.0"
+            }
+            }
+            backend "s3" {
+            bucket = "81s-remote-bucket"
+            key    = "workspace"
+            region = "us-east-1"
+            dynamodb_table = "81s-locking"
+            }
+        }
+        
+        provider "aws" {
+            # Configuration options
+            region= "us-east-1"
+        }
+
+ --> ec2.tf:
+     ------- 
+     resource "aws_instance" "terraform" {
+        #count = terraform.workspace == "prod" ? 2 : 1
+        ami = "ami-09c813fb71547fc4f"
+        instance_type = lookup(var.instance_type, terraform.workspace)
+        vpc_security_group_ids = ["sg-01fb6cf8516e8a66a"]
+        tags = {
+          Name = "terraform-${terraform.workspace}"
+        }
+      }
+      
+      
+ --> variable.tf
+     ------------
+     variable "instance_type" {
+        default = {
+            dev = "t3.micro"
+            prod = "t3.medium"
+            qa = "t3.small"
+        }
+    }

@@ -101,6 +101,8 @@ provisioners :
     --> terraform init
     --> terraform plan
     --> terraform apply -auto-approve 
+    --> terraform -out provision.out
+    --> terraform show provision.out
     
      
     1. local-exec  (https://developer.hashicorp.com/terraform/language/resources/provisioners/local-exec)

@@ -102,6 +102,8 @@ If we run the both variables:
 	
 	2. terraform.tfvars:(t2.small)
 	---------------- 
+	syntax: (terraform apply -var-file="testing.tfvars")
+    examole:  (terraform apply -var-file="terraform.tfvars")
 		instance_type = "t2.small"
 		
 	3. environment variables : (t3.large)
