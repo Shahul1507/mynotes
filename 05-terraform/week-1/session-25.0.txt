@@ -22,28 +22,28 @@ expense-1
 	daws81s.online --> t3.micro
 condition syntax:
 ------------------	
-expression ? "true" : "false"
+	expression ? "true" : "false"
 
 r53
 -----
-we should get the output of ec2 instanced created
-aws_instance.terraform
+	we should get the output of ec2 instanced created
+	aws_instance.terraform
 
 Interpolation
 -------------
-A ${ ... } sequence is an interpolation, which evaluates the expression given between the markers, converts the result to a string if necessary, and then inserts it into the final string:
+	A ${ ... } sequence is an interpolation, which evaluates the expression given between the markers, converts the result to a string if necessary, and then inserts it into the final string:
 
-"Hello, ${var.name}!"
+	"Hello, ${var.name}!"
 
-In the above example, the named object var.name is accessed and its value inserted into the string, producing a result like "Hello, Juan!".
+	In the above example, the named object var.name is accessed and its value inserted into the string, producing a result like "Hello, Juan!".
 
-"${var.instance_names[count.index]}.${var.domain_name}"
+	"${var.instance_names[count.index]}.${var.domain_name}"
 
-backend.daws81s.online
-var.instance_names = backend
-domain_name = daws81s.online
+	backend.daws81s.online
+	var.instance_names = backend
+	domain_name = daws81s.online
 
-terraform  fmt  ---   Reformat your configuration in the standard style
+	terraform  fmt  ---   Reformat your configuration in the standard style
 --------
 LOCALS |
 --------
