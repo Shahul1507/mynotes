@@ -4,17 +4,15 @@
 								    DAY-2
 							    -------------		
 								| CONTENTS	|
-								-------------													
+								-------------
+						-->      Variables
+						-->      Conditions
+						-->      Data types
+						-->      outputs
+						-->      loops
+							       -count based loop
+						-->      functions													
 Note-Link: (https://vijaycodes.hashnode.dev/fundamentals-of-terraform)
-
-1.Variables
-2.Conditions
-3.Data types
-4.outputs
-4.loops
-  I.count based loop
-5.functions
-
 
 ------------
 1.Variables    (Link:https://developer.hashicorp.com/terraform/language/values/variables)

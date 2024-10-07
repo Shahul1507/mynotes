@@ -1,0 +1,140 @@
+(terraform-aws-vpc)
+-------------------
+{ peering.tf
+ -----------
+ #peering
+ resource "aws_vpc_peering_connection" "peering" {
+    count = var.is_peering_required ? 1 : 0
+    vpc_id        = aws_vpc.main.id #requestor
+    peer_vpc_id   = data.aws_vpc.default.id #acceptor
+ 
+    auto_accept   = true
+ 
+    tags = merge(
+      var.common_tags,
+      var.vpc_peering_tags,
+      {
+          Name = "${local.resource_name}-default"
+      }
+    )
+  }
+ 
+ #public route peering
+  resource "aws_route" "public_peering" {
+    count = var.is_peering_required ? 1 : 0
+    route_table_id            = aws_route_table.public.id
+    destination_cidr_block    = data.aws_vpc.default.cidr_block
+    vpc_peering_connection_id = aws_vpc_peering_connection.peering[count.index].id
+  }
+ 
+ #private route peering
+ resource "aws_route" "private_peering" {
+     count = var.is_peering_required ? 1 : 0
+     route_table_id            = aws_route_table.private.id
+     destination_cidr_block    = data.aws_vpc.default.cidr_block
+     vpc_peering_connection_id = aws_vpc_peering_connection.peering[count.index].id
+ }    
+ 
+ #database route peering 
+ resource "aws_route" "database_peering" {
+     count = var.is_peering_required ? 1 : 0
+     route_table_id            = aws_route_table.database.id
+     destination_cidr_block    = data.aws_vpc.default.cidr_block
+     vpc_peering_connection_id = aws_vpc_peering_connection.peering[count.index].id
+ }  
+ 
+ #default route peering
+ resource "aws_route" "default_peering" {
+     count = var.is_peering_required ? 1 : 0
+     route_table_id            = data.aws_route_table.main.id
+     destination_cidr_block    = var.vpc_cidr_block
+     vpc_peering_connection_id = aws_vpc_peering_connection.peering[count.index].id
+ }  
+}
+
+{ data.tf 
+  -------
+  #peering
+
+ data "aws_vpc" "default" {
+    default = true
+  }
+ 
+  #default route table
+  data "aws_route_table" "main"{
+    vpc_id = data.aws_vpc.default.id
+   # to filter if there are multiple default vpc
+    filter {
+      name = "association.main"
+      values = ["true"]
+    }
+  }
+   
+
+}
+
+{ variable.tf
+  -----------
+  #peering 
+variable "is_peering_required"{
+    type=bool
+    default=false
+ 
+ }
+   # peering tags
+   variable "vpc_peering_tags"{
+     default={}
+   }  
+
+}
+
+{ output.tf
+  ---------
+  #peering 
+ output "default_vpc_info" {
+    value = data.aws_vpc.default
+  }
+# default route table peering
+ output "main_route_table_info" {
+      value = data.aws_route_table.main
+      }  
+
+}
+ (vpc-module-test)
+-------------------
+{vpc.tf
+------
+module "vpc" {
+    source                = "../terraform-aws-vpc"
+    project_name          = var.project_name
+    environment           = var.environment
+    common_tags           = var.common_tags
+    public_subnet_cidrs   = var.public_subnet_cidrs
+    private_subnet_cidrs  = var.private_subnet_cidrs
+    database_subnet_cidrs = var.database_subnet_cidrs
+    is_peering_required   = var.is_peering_required #(true in variables)
+  
+  }
+}
+
+{variable.tf
+----------
+#peering
+variable "is_peering_required" {
+    default = true
+  }
+}
+
+{ output.tf
+  ---------
+  #peering
+ output "default_vpc_info"{
+    value = module.vpc.default_vpc_info
+}
+#default route table
+output "main_route_table_info" {
+     value = module.vpc.main_route_table_info
+ }
+ 
+
+}

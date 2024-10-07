@@ -1,0 +1,286 @@
+                                                ------------- 
+                                                | TERRAFORM |  
+                                                -------------
+                                                    DAY-9
+                                                -------------		
+                                                | CONTENTS	|
+                                                -------------	
+                                                ---> VPC Module
+                                                    {-Recap
+                                                        -VPC
+                                                        -Internet Gateway
+                                                        -Subnets
+                                                        -Elastic IP
+                                                        -NAT gateway
+                                                    -Route table and Routes
+                                                    -Associations with subnets
+                                                    }
+                                                ---> VPC Peering
+
+Note-Link: (https://vijaycodes.hashnode.dev/terraform-vpc#heading-references)	
+for-code : (https://github.com/Shahul1507/terraform-aws-vpc.git) 
+           (https://github.com/Shahul1507/vpc-module-test.git)
+
+Peering :
+-------
+   -- If there are multiple VPCs , By default these VPCs are not connected.
+    
+   -- VPC peering establishes a connection between two VPCs
+    
+   -- CIDRs of two VPCs should not overlap.
+    
+   -- Now the task is to connect “Expense-VPC” to already existing “default VPC”
+           
+{ Peering connection through Terraform :
+  -----------------------------------
+    -- The task is to connect “expense-dev” VPC to the “default” VPC.
+    
+    --> Terraform Peering Connection Plan:
+        ----------------------------------
+    
+       -- Ask “expense-dev” VPC user whether he wants to have a peer connection with “default” VPC , If yes then the module will be connected to the default VPC in the same region.
+        
+       -- programmatically we need to know the "VPC ID" of the "default" VPC
+          
+        -->   step:1 -- Finding “Default VPC” ID
+        
+       -- create a peer connection resource in expense-dev project.
+            
+        -->   step:2 -- create peer connection from "expense-dev" to "default" VPC
+
+        -->   step-3 -- Create routes to public,private,database route_tables and peer connection -Requestor (expense-dev)
+        
+        -->   step-4 -- Create routes to default route_table and peer connection - Acceptor (default)
+              
+              --> Find “default VPC” route table ID
+        
+              --> From “default VPC” Create route and update the default VPC route table.
+}         
+ 
+    {-->step:1 - Finding "Default" vpc id
+                --------------------------
+                -- to do so, creating a datasource for default vpc Id 
+                -- ref-link : (https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/vpc)
+                -- Append (terraform-aws-vpc/data.tf)
+                   data.tf
+                   -------
+                   data "aws_vpc" "default" {
+                    default = true #to get the vpc information
+                  }
+                -- Append below code (terraform-aws-vpc/outputs.tf ) to know the ouput of "default" data source 
+                   output.tf
+                   ---------
+                   output "default_vpc_info" {
+                    value = data.aws_vpc.default
+                  }
+                -- same needs to be supplied to module 
+                -- Append below code (vpc-module-test/outputs.tf )
+                   output.tf
+                   --------- 
+                    output "default_vpc_info"{
+                        value = module.vpc.default_vpc_info
+                    }
+                -- Terraform plan (to know the key and value of vpc id-(  id  = "vpc-0d83596382946a767") from output)
+                                  
+    }
+    
+    {-->step:2 - create peer connection from "expense-dev" to "default" VPC
+                ----------------------------------------------------------
+                -- Create file (terraform-aws-vpc/peering.tf)
+                -- ref-link : (https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_peering_connection)
+                -- write the below code to "peering.tf"
+                        peering.tf
+                        ----------
+                                resource "aws_vpc_peering_connection" "peering" {
+                                    count = var.is_peering_required ? 1 : 0
+                                    vpc_id        = aws_vpc.main.id #requestor
+                                    peer_vpc_id   = data.aws_vpc.default.id #acceptor
+                                
+                                    auto_accept   = true
+                                
+                                    tags = merge(
+                                    var.common_tags,
+                                    var.vpc_peering_tags,
+                                    {
+                                        Name = "${local.resource_name}-default" #expense-dev-default
+                                    }
+                                    )
+                                }
+                -- update variable to(terraform-aws-vpc/variable.tf)
+                        variable.tf
+                        -----------
+                            #peering 
+                                variable "is_peering_required"{
+                                    type=bool
+                                    default=false
+                                
+                                }
+                                
+                                variable "vpc_peering_tags"{
+                                    default={}
+                                }
+                -- Now, In module have to supply the values below mentioned in (vpc-module-test/vpc.tf )      
+                        vpc.tf
+                        ------
+                        module "vpc"{
+                            is_peering_required   = var.is_peering_required #(true in variables)
+                            }
+                -- varible has the declared in (vpc-module-test/variable.tf )  
+                        variable.tf
+                        -----------
+                        #peering
+                        variable "is_peering_required" {
+                            default = true
+                        }     
+    }
+    -- terraform plan
+    -- terraform apply -auto-approve
+
+    {-->step:3 - Create public,private,database route_tables and route to peer connection of - Requestor (expense-dev)
+                 ------------------------------------------------------------------------------------  
+            --  Public route peering     
+                -- Append the below code in (terraform-aws-vpc/peering.tf)
+                   peering.tf
+                   ----------
+                   #public peering route
+                   resource "aws_route" "public_peering" {
+                    count = var.is_peering_required ? 1 : 0
+                    route_table_id            = aws_route_table.public.id
+                    destination_cidr_block    = data.aws_vpc.default.cidr_block
+                    vpc_peering_connection_id = aws_vpc_peering_connection.peering[count.index].id
+                  }
+            -- private route peering
+                --  Append the below code in (terraform-aws-vpc/peering.tf)  
+                    peering.tf
+                    ----------
+                    #private peering route
+                    resource "aws_route" "private_peering" {
+                    count = var.is_peering_required ? 1 : 0
+                    route_table_id            = aws_route_table.private.id
+                    destination_cidr_block    = data.aws_vpc.default.cidr_block
+                    vpc_peering_connection_id = aws_vpc_peering_connection.peering[count.index].id
+                }  
+            -- database route peering 
+                -- similary update the code in (terraform-aws-vpc/peering.tf)        
+                    peering.tf
+                    ----------
+                    #database peering route
+                    resource "aws_route" "data_peering" {
+                    count = var.is_peering_required ? 1 : 0
+                    route_table_id            = aws_route_table.database.id
+                    destination_cidr_block    = data.aws_vpc.default.cidr_block
+                    vpc_peering_connection_id = aws_vpc_peering_connection.peering[count.index].id
+            }  
+    }
+    -- terraform plan
+    -- terraform apply -auto-approve
+
+    {-->step:4 -  Create routes to default route_table and peer connection - Acceptor (default) 
+                  -----------------------------------------------------------------------------
+                  --Finding route table id for “default VPC”
+                    ----------------------------------------
+                    --ref-link:(https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/route_table)
+                    
+                    -- Append the code in (terraform-aws-vpc/data.tf)
+                       data.tf
+                       -------
+                       data "aws_route_table" "main"{
+                        vpc_id = data.aws_vpc.default.id
+                        filter {
+                          name = "association.main"
+                          values = ["true"]
+                        }
+                      }
+                     
+                    -- Append the code in (terraform-aws-vpc/outputs.tf)
+                       output.tf
+                       ---------
+                       output "main_route_table_info" {
+                        value = data.aws_route_table.main
+                      }
+                    
+                    -- Append the code in (vpc-module-test/outputs.tf )
+                        output.tf
+                        --------- 
+                        output "main_route_table_info" {
+                            value = module.vpc.main_route_table_info
+                        }
+
+                 -- From “default VPC” create route and update the "default VPC" route table
+                    ------------------------------------------------------------------------
+                    --  Append below code to (terraform-aws-vpc/peering.tf )
+                        peering.tf
+                        ----------
+                        resource "aws_route" "default_peering" {
+                            count = var.is_peering_required ? 1 : 0
+                            route_table_id            = data.aws_route_table.main.route_table_id
+                            destination_cidr_block    = var.vpc_cidr_block
+                            vpc_peering_connection_id = aws_vpc_peering_connection.peering[count.index].id
+                          }
+                               
+    } 
+    -- terraform plan
+    -- terraform apply -auto-approve
+
+    
+{
+Recap:
+-----
+    vpc
+    igw
+    public private database subnets in 1a and 1b AZ
+    eip
+    natgateway
+
+route tables
+routes
+associations with subnets
+
+expense-dev-public
+
+associations
+--------------
+1 public rt --> 2 public subnets
+
+Peering
+-------------
+
+dev vpc prod vpc
+by default vpc are not connected with each other
+
+VPC peering can establish between two VPC.
+VPC CIDR should be different, they should not overlap...
+
+VPC-1 --> 10.0.1.123
+10.0.1.122 --> 10.0.1.123
+
+VPC-2 --> 10.0.1.123 
+
+same account
+---------------
+same region and diff VPC can peer
+diff region and diff VPC can peer
+
+2 accounts
+---------------
+diff account same region diff VPC can peer
+diff account diff region diff VPC can peer
+
+
+Peering
+----------------
+ask user whether he wants VPC peering or not. if he say yes our module will connect with default vpc in the same region
+
+persons = ["ramesh","suresh","raheem","robert"]
+
+persons[1]
+
+persons = ["john"]
+
+persons[0]
+
+public servers
+backend servers
+database servers
+}
+

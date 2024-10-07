@@ -64,9 +64,9 @@ Steps: (terraform/datasources)
 --> terraform init
 --> terraform plan
 --> terraform apply -auto-approve 					  
-                             --------
-							 | CODE |
-							 --------
+                            --------
+                            | CODE |
+                            --------
 
 data.tf
 --------

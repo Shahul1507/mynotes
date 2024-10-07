@@ -4,9 +4,9 @@
 								    DAY-1
 								  CONTENTS	
 								--------------
-								IaaC advantages
-								Terraform installation
-								EC2 and SG creation (Ref. SESSION-22.1 for code)
+					     -->    IaaC advantages
+						 -->    Terraform installation
+						 -->    EC2 and SG creation (Ref. SESSION-22.1 for code)
 
 Note-Link: (https://vijaycodes.hashnode.dev/fundamentals-of-terraform)
 

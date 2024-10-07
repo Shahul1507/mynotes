@@ -1,3 +1,4 @@
+Terraform Recap{
 - Terraform is an IAC (Infrastructure as Code) tool
 - Automate, reuse, version controlling
 - Hashicorp, hcl (Hashicorp language)
@@ -32,8 +33,14 @@ A) No
   - -backend-config
   - -upgrade
 - terraform validate: It perform syntax check and validates our code
+                      $ terraform validate
+                      Success! The configuration is valid.
 - terraform plan
   - -var-file
+  - terraform plan -out module.tfvars
+  - terraform apply module.tfvars
+  - terraform show (shows the file data module.tfvars)
+  - terraform list (show the list of resources terraform created at that momet of time)
 - terraform apply
 - teraform fmt
 - terraform destroy
@@ -41,9 +48,40 @@ A) No
 - terraform workspace
 
 - -upgrade: It is usually used to upgrade the latest version of the module source code
+  - -provider.tf
+     -----------
+     use : version = "~>5.0" instead if hardcode version = "5.69.0"
+  error:
+  ------
+        shahu@DESKTOP-AMUIIAK MINGW64 ~/devops/daws-81s/repo/terraform/ec2-module-demo (main)
+        $ terraform init
+        Initializing the backend...
+        Initializing modules...
+        - ec2 in ..\terraform-concept\functions
+        Initializing provider plugins...
+        - Reusing previous version of hashicorp/aws from the dependency lock file
+        ╷
+        │ Error: Failed to query available provider packages
+        │
+        │ Could not retrieve the list of available versions for provider hashicorp/aws: locked provider registry.terraform.io/hashicorp/aws 5.69.0 does not match configured version constraint 5.67.0;
+        │ must use terraform init -upgrade to allow selection of new versions
 
+  usage:
+        shahu@DESKTOP-AMUIIAK MINGW64 ~/devops/daws-81s/repo/terraform/ec2-module-demo (main)
+        $ terraform init -upgrade
+        Initializing the backend...
+        Upgrading modules...
+        - ec2 in ..\terraform-concept\functions
+        Initializing provider plugins...
+        - Finding hashicorp/aws versions matching "5.67.0"...
+        - Installing hashicorp/aws v5.67.0...
+        - Installed hashicorp/aws v5.67.0 (signed by HashiCorp)
+        Terraform has made some changes to the provider dependency selections recorded
+        in the .terraform.lock.hcl file. Review those changes and commit them to your
+        version control system if they represent changes you intended to make.
+            
 - terraform taint: Using this command, you could taint a terraform resource
-- modules: 
+- modules: a group of functions combined together we call a module
   - Root module: terraform-aws-ec2
   - Child: ec2-module-demo
   
@@ -54,4 +92,7 @@ A) No
 - How to handle a situation when a state file is deleted or corrupted?
 A) We need to import the resources that are part of the terraform code into its state file and we do it using: terraform import
 
-terraform import aws_instance.web i-0bec8c7d30e5ab951
+terraform import aws_instance.web i-0bec8c7d30e5ab951 
+terraform import resource_name  id to import
+
+}

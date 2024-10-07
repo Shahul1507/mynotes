@@ -145,7 +145,7 @@ locking:
 			│ again. For most commands, you can disable locking with the "-lock=false"
 			│ flag, but this is not recommended.
 			╵
-	 -->every local will have .state file,which will be locked while its in use .Others, cannot    run it at the same time.
+	 -->every local will have .state file,which will be locked while its in use .Others, cannot run it at the same time.
 	 --> to over come this, remote locking concept
  This can be done in aws through:
  --------------------------------

@@ -1,7 +1,7 @@
                                         ------------- 
                                         | TERRAFORM |  
                                         -------------
-                                            DAY-5
+                                            DAY-6
                                         -------------		
                                         | CONTENTS	|
                                         -------------	
@@ -216,24 +216,3 @@ Terraform multi environments:
                         terraform.workspace == prod
                         terraform.workspace == dev    
 
-
-
-
-
-
-
-
-
-Module development
-------------------------
-DRY
-
-variables
-functions
-roles
-
-functions --> inputs and outputs, we call function. you can call infinite times
-write code once and call them many times...
-
-
-modules -> resource defnition and arguements are same. only values are different
