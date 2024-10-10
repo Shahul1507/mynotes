@@ -2,8 +2,9 @@
 								| TERRAFORM |  
 								-------------
 								    DAY-1
-								  CONTENTS	
-								--------------
+								-------------	
+								|  CONTENTS	 |
+								-------------
 					     -->    IaaC advantages
 						 -->    Terraform installation
 						 -->    EC2 and SG creation (Ref. SESSION-22.1 for code)

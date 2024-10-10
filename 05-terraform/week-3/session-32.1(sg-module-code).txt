@@ -1,0 +1,187 @@
+(terraform-aws-security-group)
+-----------------------------
+{main.tf
+ -------
+  		   
+    resource "aws_security_group" "main" {
+        name        = local.sg_final_name
+        description = "Allow TLS inbound traffic and all outbound traffic"
+        vpc_id      = var.vpc_id
+    
+        egress {
+        from_port        = 0
+        to_port          = 0
+        protocol         = "-1"
+        cidr_blocks      = ["0.0.0.0/0"]
+        }  
+    
+        tags = merge(
+        var.common_tags,
+        var.sg_tags,
+        {
+            Name = local.sg_final_name #expense-dev-mysql
+        }
+        )
+        }    
+
+}
+
+{variable.tf
+ ------------   
+    #sg_name = expense-env-mysql
+
+    variable "project_name" {
+
+    }
+
+    variable "environment" {
+    
+    }
+
+    variable "sg_name" {
+
+    }
+
+    variable "common_tags" {
+        default={}
+    }
+
+    variable "sg_tags"{
+        default = {}
+    }
+
+    variable "vpc_id" {
+    }
+ 
+
+}
+
+{locals.tf
+ ----------   
+    locals {
+        sg_final_name = "${var.project_name}-${var.environment}-${var.sg_name}"
+      }
+}
+
+{outputs.tf
+ ----------
+ output "id" {
+    value = aws_security_group.main.id
+  }     
+
+}
+
+(expense-terraform)
+-------------------
+{provider.tf:
+ ------------
+ terraform {
+    required_providers {
+      aws = {
+        source  = "hashicorp/aws"
+        version = "5.67.0"
+      }
+    }
+    backend "s3" {
+      bucket         = "81s-remote-bucket"
+      key            = "expense"
+      region         = "us-east-1"
+      dynamodb_table = "81s-locking"
+    }
+  }
+  
+  provider "aws" {
+    # Configuration options
+    region = "us-east-1"
+  }   
+
+}
+
+{vpc.tf
+ ------
+ module "vpc" {
+    # source                = "../terraform-aws-vpc"
+   source                = "git::https://github.com/Shahul1507/terraform-aws-vpc.git?ref=main"
+     vpc_cidr              = var.vpc_cidr_block
+    project_name          = var.project_name
+    environment           = var.environment
+    common_tags           = var.common_tags
+    public_subnet_cidrs   = var.public_subnet_cidrs
+    private_subnet_cidrs  = var.private_subnet_cidrs
+    database_subnet_cidrs = var.database_subnet_cidrs
+    is_peering_required   = var.is_peering_required #(true in variables)
+  
+  }
+  
+
+}
+
+{variable.tf
+ ----------- 
+ variable "project_name" {
+    default = "expense"
+}
+
+variable "environment" {
+    default = "dev"
+}
+
+variable "vpc_cidr_block" {
+    default = "10.0.0.0/16"
+}
+
+variable "common_tags" {
+    default = {
+        Project = "expense"
+        Terraform = "true"
+        Environment = "dev"
+    }
+}
+
+variable "public_subnet_cidrs" {
+    default = ["10.0.1.0/24", "10.0.2.0/24"]
+}
+
+variable "private_subnet_cidrs" {
+    default = ["10.0.11.0/24", "10.0.12.0/24"]
+}
+
+variable "database_subnet_cidrs" {
+    default = ["10.0.21.0/24", "10.0.22.0/24"]
+}
+
+variable "is_peering_required" {
+    default = true
+}
+
+variable "mysql_sg_tags" {     #sg module
+    default = {
+        Component = "mysql"
+    }
+}
+  
+
+}
+
+{sg.tf
+ -----
+ module "mysql_sg" {
+    #source = "../terraform-aws-security-group"
+    source = "git::https://github.com/Shahul1507/terraform-aws-security-group.git?ref=main"
+    project_name = var.project_name
+    environment = var.environment
+    sg_name = "mysql"
+    vpc_id = module.vpc.vpc_id
+    common_tags = var.common_tags
+    sg_tags = var.mysql_sg_tags
+}  
+
+}
+
+{outputs.tf
+ ----------
+ output "vpc_id" {
+    value = module.vpc.vpc_id
+ }
+
+}

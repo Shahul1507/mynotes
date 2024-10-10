@@ -32,8 +32,8 @@ Note-Link: (https://vijaycodes.hashnode.dev/fundamentals-of-terraform)
 							}
 Steps: (terraform/variables/Variable.tf)
 ------							
----> create folder under terraform in workspace(vs code)
-					terraform 
+---> create folder "variables" under "terraform" in workspace(vs code)
+				--	terraform 
 					- variables
 					  -ec2.tf
 					  -provider.tf (it should be present in all folders)

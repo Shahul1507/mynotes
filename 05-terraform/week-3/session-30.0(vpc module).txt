@@ -67,12 +67,12 @@ Creating VPC with Terraform Module {
 		(terraform-aws-vpc)={
 		--Add file "main.tf" in "terraform-aws-vpc" (https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc)
 		--add "variables.tf" file in "terraform-aws-vpc"
-				--> vpc_cidr —> CIDR address
+				--> vpc_cidr_block —> CIDR address
 				--> enable_dns_hostname = true (default its false)
 				--> mandatory variables : project_name , environment —> for VPC naming convention		 
 				--> optional variables : common_tags , vpc_tags , igw_tags (empty initially)
 		--create "locals.tf" in "terraform-aws-vpc" add - (resource_name = "${var.project_name}-${var.environment}")
-		--"main.tf" : add tag information with (“Name = local.resource_name”) 
+		--append "main.tf" : add tag information with (“Name = local.resource_name”) 
 		--create "outputs.tf" in "terraform-aws-vpc" folder (providing vpc_id to user)
 		}
 		(vpc-module-demo) {
@@ -388,6 +388,7 @@ Creating VPC with Terraform Module {
 	    
 		--similarly do for private , database  
 	   }
+	--terraform init -reconfigure   
 	--terraform plan 
 	--terraform apply -auto-approve
 

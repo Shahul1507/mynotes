@@ -13,17 +13,17 @@ Variables: declaring variables to ec2 & Security-group fields
 		# instance_type
 		variable "instance_type" {
 		  type        = string
-		  default     = "t3.micro"
+		  default     = "t3.micro" #string
 		}
 		#tags
 		variable "tags" {
 		  type        = map
-		  default     = {sta
+		  default     = {     #map
 			 Name = "backend"
 			 project = "expense"
 			 component = "backend"
 			 environment = "DEV"
-			 terraform = "true"
+			 terraform = "true" # bolean
 		  } 
 		  
 		}
@@ -40,7 +40,7 @@ Variables: declaring variables to ec2 & Security-group fields
 		}
 		# ingress
 		variable "from_port" {
-		  type        = number
+		  type        = number # number
 		  default     = "22"
 		 
 		}

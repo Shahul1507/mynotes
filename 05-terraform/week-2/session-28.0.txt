@@ -116,7 +116,8 @@ private/app subnet will not have internet connection as routes.
 database subnet is also called as private subnet
 
 10.0.0.0/16 --> internal roads
-
+steps:
+------
 create vpc
 create igw and associate with VPC
 create public, private and database subnets

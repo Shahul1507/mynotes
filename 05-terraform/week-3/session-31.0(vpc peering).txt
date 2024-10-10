@@ -12,11 +12,14 @@
                                                         -Subnets
                                                         -Elastic IP
                                                         -NAT gateway
+                                                    }
                                                     -Route table and Routes
                                                     -Associations with subnets
-                                                    }
+                                                    
                                                 ---> VPC Peering
 
+References: 
+----------                                                
 Note-Link: (https://vijaycodes.hashnode.dev/terraform-vpc#heading-references)	
 for-code : (https://github.com/Shahul1507/terraform-aws-vpc.git) 
            (https://github.com/Shahul1507/vpc-module-test.git)
@@ -50,7 +53,7 @@ Peering :
 
         -->   step-3 -- Create routes to public,private,database route_tables and peer connection -Requestor (expense-dev)
         
-        -->   step-4 -- Create routes to default route_table and peer connection - Acceptor (default)
+        -->   step-4 -- Create routes to "default" route_table and peer connection - Acceptor (default)
               
               --> Find “default VPC” route table ID
         
@@ -214,14 +217,15 @@ Peering :
                         resource "aws_route" "default_peering" {
                             count = var.is_peering_required ? 1 : 0
                             route_table_id            = data.aws_route_table.main.route_table_id
-                            destination_cidr_block    = var.vpc_cidr_block
+                            destination_cidr_block    = var.vpc_cidr_block #10.0.0.0/16
                             vpc_peering_connection_id = aws_vpc_peering_connection.peering[count.index].id
                           }
                                
     } 
+    -- terraform init -reconfigure
     -- terraform plan
     -- terraform apply -auto-approve
-
+    
     
 {
 Recap:
