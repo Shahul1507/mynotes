@@ -14,33 +14,110 @@
                                     -Associations
                                     -Elastic IP
                                     -NAT gateway
+
+
+                                    MODULE DEVELOPMENT
+                                    ------------------
 note-link: (https://vijaycodes.hashnode.dev/terraform-multi-environment#heading-module-development)                                        
-
-Module development
+-------------------
+{Module development
 ------------------
-DRY - do not repeat
+Module development in Terraform is the process of creating a directory that contains configuration files to group resources and create reusable components
 
-variables
-functions
-roles (ansible)
+DRY - do not repeat
+  variables
+  functions
+  roles (ansible)
 
 functions --> inputs and outputs, we call function. you can call infinite times
 
 modules --> resource defnition and arguements are same. only values are different
             write code once and call them many times..
-            
-advantages
+}            
+{advantages
 -----------
 code reuse
 updates are easy and centralised
 best practices can be enforced
 you can restrict user using few options as per project standards
+}
 
+
+
+                                      VPC- (Virtual private cloud)
+                                      ---------------------------
 note-link: (https://vijaycodes.hashnode.dev/terraform-multi-environment#heading-vpc-virtual-private-cloud)
+vpc-note: (https://medium.com/p/068764b3a01a/edit)
+vpc-module: (https://medium.com/p/3e955f1975c7/edit)
+------------------------------
+VPC -->(Virtual private cloud)
+------------------------------
+{What is VPC ?
+------------
+    VPC is a private section of a public cloud infrastructure that allows users to provision and manage resources in a logically isolated network, providing customizable IP address ranges, subnets, and security settings.
+}
 
-VPC --> Virtual private cloud
------------------------
-business is restaurant orders
+{Why VPC is important ?
+--------------------	
+-->  {Isolation: 
+     ----------
+      VPC's provide a dedicated environment within the public cloud, keeping your resources separate from others. This enhances security and minimizes the risk of data beaches.
+     }
+
+-->  {Scalability:
+  ------------
+      VPCs offer the ability to scale resources up or down based on demand, ensuring you can handle varying workloads without overprovisioning
+     }
+
+-->  {Cost Management:
+  ----------------
+      By controlling resources and configurations, you can optimize costs based on your specific usage and needs.
+     }    
+
+-->  {Enhanced Security:
+  -----------------
+      VPCs allow you to implement security measures such as firewalls, security groups, and network access control lists (ACLs) to control inbound and outbound traffic.
+     }
+}
+
+{Components of VPC:
+-----------------
+-->{Internet Gateway : 
+    ------------------
+    This component allows resources in a public subnet to communicate with the internet. Internet gateway is attached to the vpc
+   } 
+
+-->{Subnets: 
+    --------
+    This component allows you to partition your vpc into smaller parts. Each subnet is defined by CIDR(classless interdomain routing) block . It defines the range of IP addresses available in that subnet.
+   } 
+
+-->{Route tables:
+    -------------
+    It is a set of rules that determines how traffic is directed within VPC. Each route table contains entries (routes) that define the destination IP address, the target and the routing behavior.
+   }
+
+-->{NAT(Network Address Translation) Gateway:
+    -----------------------------------------
+    It allows instances of private subnets connecting to Internet. NAT gateway is placed in public subnets.
+   }
+
+-->{Elastic IP:
+    ----------
+    It is attached to the NAT gateway as IP should not change every time
+   }
+
+-->{Security Groups:
+   ----------------
+    Firewalls that control traffic to and from individual instances. They allow you to specify rules based on IP addresses, protocols, and ports.
+   }
+
+}
+
+
+
+
+{business is restaurant orders
 
 physical space
 buy servers
@@ -159,7 +236,7 @@ EC2 Module
 ------------
 it should accept count/instance_names
 use instance_names inside tags
-
+}
 Interview Questions
 -------------------
 - How do you implement multiple environments in Terraform..?

@@ -1,7 +1,7 @@
 											------------- 
 											| TERRAFORM |  
 											-------------
-												DAY-9
+												DAY-10
 											-------------		
 											| CONTENTS	|
 											-------------	
@@ -24,94 +24,94 @@ for-code : https://github.com/daws-81s/terraform-aws-security-group.git
     -- We will use "Security-group_module" in aws 
     -- and connect "sg-module" with "VPC" 
 
-
+----------------------
 security_group-Module: (ref: session-32.1) for code
 ----------------------
-{Create (terrform-aws-security-group) folder : 
- -------------------------------------------	
- --	{Steps: (main.tf)
-	
-	-- create "main.tf" for security_group resource
-	-- ref- https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group
-	-- copy resource code to "main.tf" from above link
-	-- change resource to (resource "aws_security_group" "main" )
-	-- change (name = local.sg_final_name)   #defined in "locals.tf"
-	-- change (vpc_id = var.vpc_id)       #defined in "varaible.tf"
-	-- copy egress block from above link,we need to allow all #(by default egress block is removed by Terraform )
-	-- assign tags in resource # defined in variables.tf
-			-- merge "common_tags" and "sg_tags"-(name = local.sg_final_name) # defined in variable.tf
-	}
-
- -- {Steps: (variables.tf)
-	  
-	 -- create,(project_name, environment, sg_name, common_tags, sg-tags, vpc_id) 
-    }
-
- -- {Steps: (locals,tf)
-
-	-- define, locals to give the sg-name as -- expense-dev-mysql
-	-- using variables, define the sg-name through locals 
-	-- (sg_final_name = "${var.project_name}-${var.environment}-${var.sg_name}")
-    }
-
- -- {Steps: (outputs.tf) # to get the security-group id
-    
-	-- define the value of security-group id ( value = aws_security_group.main.id)
-    }
-}
-
-{Create (expence-terraform) folder:
------------------------------------
- -- {Steps: (provider.tf)
-
-	-- copy the provider content from (vpc-module-test/provider.tf) & change the "key" name to "expense" in - backend "s3" block
-    }
-
- -- {Steps: (vpc.tf)
-
-	-- copy the vpc content from (vpc-module-test/vpc.tf)
-
-    }	
-
- -- {steps: (variable.tf)
-
-	-- copy the required variable content for vpc-module from (vpc-module-test/variable.tf)
-    -- add (mysql_sg_tags)in variable.tf and mention (compenent = "mysql")
-    }
-    
- -- {Steps: (sg.tf)
-	
-	-- create "sg-module" for "mysql_sg" as shown below 
-	-- declare the required vales so it calls the (terraform-aws-security-group) source folder 
-	  
-		module "mysql_sg" {
-			#source = "../terraform-aws-security-group"
-			source = "git::https://github.com/Shahul1507/terraform-aws-security-group.git?ref=main"
-			project_name = var.project_name
-			environment = var.environment
-			sg_name = "mysql"
-			vpc_id = module.vpc.vpc_id
-			common_tags = var.common_tags
-			sg_tags = var.mysql_sg_tags
+-->	{Create (terrform-aws-security-group) folder : 
+	-------------------------------------------	
+	--	{Steps: (main.tf)
+		
+		-- create "main.tf" for security_group resource
+		-- ref- https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group
+		-- copy resource code to "main.tf" from above link
+		-- change resource to (resource "aws_security_group" "main" )
+		-- change (name = local.sg_final_name)   #defined in "locals.tf"
+		-- change (vpc_id = var.vpc_id)       #defined in "varaible.tf"
+		-- copy egress block from above link,we need to allow all #(by default egress block is removed by Terraform )
+		-- assign tags in resource # defined in variables.tf
+				-- merge "common_tags" and "sg_tags"-(name = local.sg_final_name) # defined in variable.tf
 		}
-   
 
+	-- {Steps: (variables.tf)
+		
+		-- create,(project_name, environment, sg_name, common_tags, sg-tags, vpc_id) 
+		}
+
+	-- {Steps: (locals,tf)
+
+		-- define, locals to give the sg-name as -- expense-dev-mysql
+		-- using variables, define the sg-name through locals 
+		-- (sg_final_name = "${var.project_name}-${var.environment}-${var.sg_name}")
+		}
+
+	-- {Steps: (outputs.tf) # to get the security-group id
+		
+		-- define the value of security-group id ( value = aws_security_group.main.id)
+		}
 	}
 
- -- {Steps: (outputs.tf) to print the vpc_id so can define in sg_module
+-->	{Create (expence-terraform) folder:
+	-----------------------------------
+	-- {Steps: (provider.tf)
 
-	-- define the output value as ( value = "module.vpc.vpc_id") to declare it in sg.tf
-	-- it gets the output of vpc_id from vpc-module
+		-- copy the provider content from (vpc-module-test/provider.tf) & change the "key" name to "expense" in - backend "s3" block
+		}
 
-    }
-}
+	-- {Steps: (vpc.tf)
 
--- terraform init 
--- terraform validate
--- terraform plan
--- terraform apply -auto-approve” and check.	
+		-- copy the vpc content from (vpc-module-test/vpc.tf)
 
-SSM Parameters store: (Systems Manager)
+		}	
+
+	-- {steps: (variable.tf)
+
+		-- copy the required variable content for vpc-module from (vpc-module-test/variable.tf)
+		-- add (mysql_sg_tags)in variable.tf and mention (compenent = "mysql")
+		}
+		
+	-- {Steps: (sg.tf)
+		
+		-- create "sg-module" for "mysql_sg" as shown below 
+		-- declare the required vales so it calls the (terraform-aws-security-group) source folder 
+		
+			module "mysql_sg" {
+				#source = "../terraform-aws-security-group"
+				source = "git::https://github.com/Shahul1507/terraform-aws-security-group.git?ref=main"
+				project_name = var.project_name
+				environment = var.environment
+				sg_name = "mysql"
+				vpc_id = module.vpc.vpc_id
+				common_tags = var.common_tags
+				sg_tags = var.mysql_sg_tags
+			}
+	
+
+		}
+
+	-- {Steps: (outputs.tf) to print the vpc_id so can define in sg_module
+
+		-- define the output value as ( value = "module.vpc.vpc_id") to declare it in sg.tf
+		-- it gets the output of vpc_id from vpc-module
+
+		}
+	}
+
+	-- terraform init 
+	-- terraform validate
+	-- terraform plan
+	-- terraform apply -auto-approve” and check.	
+
+SSM Parameters store: (Systems Manager) (ref: session-32.2) for code
 --------------------
 Restructure the terraform project(using ssm parameters store):
 ---------------------------------
@@ -120,83 +120,85 @@ Restructure the terraform project(using ssm parameters store):
  -- For every refresh, terraform is calling (AWS_API) and if it is a big project
  -- there will be many resources and it is not good to call (AWS_API) every time. 
  -- now we will restructure the program to reduce the number of calls to (AWS_API).
+
  This can be done by separating modules i.e, vpc,sg etc
 
 create “expense-infra-dev” folder
 -------------------------------
-{create "10-vpc" folder for "vpc-module"
- --------------------------------------
- --	{Steps: (provider.tf)	
-   
-	-- copy the provider content from (vpc-module-test/provider.tf) & change the "key" name to "expense-vpc" in - backend "s3" block
-    } 
-
- -- {Steps: (variables.tf)
+-->	{create "10-vpc" folder for "vpc-module"
+	--------------------------------------
+	--	{Steps: (provider.tf)	
 	
-	-- copy the required variable content for vpc-module from (vpc-module-test/variable.tf)
-    }
+		-- copy the provider content from (vpc-module-test/provider.tf) & change the "key" name to "expense-vpc" in - backend "s3" block
+		} 
 
- -- {Steps: (vpc.tf)
-    
-	-- copy the vpc content from (vpc-module-test/vpc.tf )
-    }
-}
-
--- terraform init 
--- terraform validate
--- terraform plan
--- terraform apply -auto-approve” and check(no_errors)	
-
-{create “20-sg” folder for "sg-module"
---------------------------------------
- -- {Steps: (provider.tf)	
-   
-	-- copy the provider content from (vpc-module-test/provider.tf) & change the "key" name to "expense-sg" in - backend "s3" block
-    } 
-
- -- {Steps: (variables.tf)
-	
-    -- copy the required variable content for vpc-module from (vpc-module-test/variable.tf)
-	   -- ["projct_name","environment","common_tags","mysql_sg_tags"] variables
-    }
-
- -- {Steps: (main.tf)
-	 
-	-- create "sg-module" for "mysql_sg" as shown below 
-	-- declare the required vales so it calls the (terraform-aws-security-group) source folder 
-	  
-		module "mysql_sg" {
-			#source = "../terraform-aws-security-group"
-			source = "git::https://github.com/Shahul1507/terraform-aws-security-group.git?ref=main"
-			project_name = var.project_name
-			environment = var.environment
-			sg_name = "mysql"
-			vpc_id = module.vpc.vpc_id #local.vpc_id 
-			common_tags = var.common_tags
-			sg_tags = var.mysql_sg_tags
+	-- {Steps: (variables.tf)
+		
+		-- copy the required variable content for vpc-module from (vpc-module-test/variable.tf)
 		}
-   
+
+	-- {Steps: (vpc.tf)
+		
+		-- copy the vpc content from (vpc-module-test/vpc.tf )
+		}
+	}
+
+	-- terraform init 
+	-- terraform validate
+	-- terraform plan
+	-- terraform apply -auto-approve” and check(no_errors)	
+
+-->	{create “20-sg” folder for "sg-module"
+	--------------------------------------
+	-- {Steps: (provider.tf)	
+	
+		-- copy the provider content from (vpc-module-test/provider.tf) & change the "key" name to "expense-sg" in - backend "s3" block
+		} 
+
+	-- {Steps: (variables.tf)
+		
+		-- copy the required variable content for vpc-module from (vpc-module-test/variable.tf)
+		-- ["projct_name","environment","common_tags","mysql_sg_tags"] variables
+		}
+
+	-- {Steps: (main.tf)
+		
+		-- create "sg-module" for "mysql_sg" as shown below 
+		-- declare the required vales so it calls the (terraform-aws-security-group) source folder 
+		
+			module "mysql_sg" {
+				#source = "../terraform-aws-security-group"
+				source = "git::https://github.com/Shahul1507/terraform-aws-security-group.git?ref=main"
+				project_name = var.project_name
+				environment = var.environment
+				sg_name = "mysql"
+				vpc_id = module.vpc.vpc_id #local.vpc_id 
+				common_tags = var.common_tags
+				sg_tags = var.mysql_sg_tags
+			}
+	
 
 
-    }
+		}
 
--- terraform init 
--- terraform validate  { here we get the error_message:
-						--╷
-						│ Error: Reference to undeclared module
-						│
-						│   on main.tf line 6, in module "mysql_sg":
-						│    6:     vpc_id = module.vpc.vpc_id
-						│
-						│ No module call named "vpc" is declared in the root module.
-						
-					}	 
- 
-}
+	-- terraform init 
+	-- terraform validate  { here we get the error_message:
+							--╷
+							│ Error: Reference to undeclared module
+							│
+							│   on main.tf line 6, in module "mysql_sg":
+							│    6:     vpc_id = module.vpc.vpc_id
+							│
+							│ No module call named "vpc" is declared in the root module.
+							
+						}	 
+	
+	}
 
 (challenge) : In (20-sg/sg.tf) - we have "vpc_id = module.vpc.vpc_id" but "vpc module" is in another folder to access vpc data, terraform will not be able to access data directly from another folder.
 
-SSM PARAMETERS:
+--------------
+SSM PARAMETERS: 
 --------------
 This error can be handeled by using "ssm-parameters" store in "aws"
 
@@ -263,8 +265,10 @@ module "mysql_sg" {
 
 }
 -- terraform plan
--- terraform apply -auto-approve  
+-- terraform apply -auto-approve   
 
+-- similarly,create modules "backend_sg" and "frontend_sg"
+   we have created Security groups.
 
 {
 security_group-names for expense project:

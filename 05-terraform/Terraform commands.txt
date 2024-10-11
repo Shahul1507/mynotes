@@ -1,3 +1,5 @@
+https://vijaycodes.hashnode.dev/boost-your-devops-efficiency-must-know-commands
+
 $ terraform
 Usage: terraform [global options] <subcommand> [args]
 
@@ -14,7 +16,7 @@ Main commands:
 
 All other commands:
   console       Try Terraform expressions at an interactive command prompt
-terraform  fmt           Reformat your configuration in the standard style 
+  terraform  fmt           Reformat your configuration in the standard style 
   force-unlock  Release a stuck lock on the current workspace
   get           Install or upgrade remote Terraform modules
   graph         Generate a Graphviz graph of the steps in an operation
