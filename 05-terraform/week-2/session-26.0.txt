@@ -8,7 +8,9 @@
                     --->     Recap 
 					--->     For each loop
 					--->     Dynamic loop
-					--->     Provisioners			
+					--->     Provisioners
+                             -- local-exec 
+                             -- remote-exec  		
 					--->     Quiz
 
 Recap

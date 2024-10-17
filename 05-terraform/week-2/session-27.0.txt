@@ -71,19 +71,21 @@ Terraform multi environments:
                 mysql-dev
                 backend-dev
                 frontend-dev
+
                 r53 records:
                 ----------
                 mysql-dev.shahul.online
                 backend-dev.shahul.online
                 frontend-dev.shahul.online
 
-      ---> dev instances and records plan
+      ---> prod instances and records plan
            ------------------------------
                 ec2instances
                 ------------i
                 mysql-prod
                 backend-prod
                 frontend-prod
+
                 r53 records:
                 ----------
                 mysql-prod.shahul.online
@@ -92,20 +94,20 @@ Terraform multi environments:
 
             Steps: (terraform/terrafor-multi-env/tfvars)
             ------							
-            ---> create folder under terraform in workspace(vs code)
+            ---> create folder under terraform (vs code)
                                 terraform 
-                                -terraform-multi-env
-                                  -tfvars
-                                    -dev (folder)
+                                -- terraform-multi-env
+                                  --tfvars
+                                    --dev (folder)
                                        -backend.tf
                                        -dev.tfvars
-                                    -prod (folder)
+                                    --prod (folder)
                                        -backend.tf 
                                        -prod.tfvars 
-                                    -providers.tf
-                                    -variables.tf                      
-                                    -ec2.tf
-                                    -r53.tf                      
+                                    --providers.tf
+                                    --variables.tf                      
+                                    --ec2.tf
+                                    --r53.tf                      
     Create file "backend.tf" in terraform-multi-env/tfvars/dev with following content:
  
                     bucket         = "81s-remote-bucket-dev"
@@ -120,7 +122,7 @@ Terraform multi environments:
                     region = "us-east-1"
                     dynamodb_table = "81s-locking-prod"
 
-    create files "dev.tfvars" and "prod.tfavrs" in dev and prod foldsers
+    create files "dev.tfvars" and "prod.tfavrs" in dev and prod folders
     create ec2 instance ,variables,routet53 files  (ref code - session - 27.1 & 27.2 )
 
         dev-environment
@@ -147,9 +149,9 @@ Terraform multi environments:
    -----------------------------------
    --> what is terraform workspace?
 
-      Terraform workspace is used when ever there is requirement of different environments,
-      it will give us terraform.workspace variable and it will keep the current environment value inside it.
-
+    --  "Terraform workspace" is used when ever there is requirement of different environments,
+    --  it will give us "terraform.workspace" variable and it will keep the current environment value inside it.
+    --  "Terraform workspace" creates "s3" buckets on its own, doesn't need to create separate buckets for environments  
      -->Advantages:
         ----------
         Code reuse (same code in all environments)

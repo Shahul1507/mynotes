@@ -67,7 +67,7 @@ Raw products == Data
 data is in tables and columns
 ----------------------------
 user_id, user_name, first_name, last_name, password, created_date, dob
-1         sivakumar  sivakumar   M         siva123    `9-AUG-2024   01-01-01
+1         sivakumar  sivakumar   M         siva123    9-AUG-2024   01-01-01
 
 Chef == App server
 

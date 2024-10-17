@@ -1,0 +1,323 @@
+                                            ----------
+                                            | DOCKER |  
+                                            ----------
+                                               DAY-2
+                                            -------------		
+                                            | CONTENTS	|
+                                            -------------
+                                            ---> Dockerfile
+                                            ---> Dockerfile instructions
+                                                 -- FROM
+                                                 -- RUN
+                                                 -- CMD
+                                                 -- CMD vs ENV
+                                                 -- LABEL
+                                                 -- EXPOSE
+                                                 -- ADD
+                                                 -- COPY
+                                                 -- ADD vs COPY
+References: {
+----------
+										
+Docker-file-Ref: ( https://docs.docker.com/reference/dockerfile/)
+for-code(git-hub) : 
+					 
+}                                            
+============
+DOCKER FILE  : 
+============
+-- "Docker-file" is used to build "custom images" by using "docker instructions" 
+                                (OR)
+-- "Docker-file" is declarative way of creating "custom images" by using "docker instructions" 
+-- In docker "custom image"
+         --> we use bare OS
+         --> Application run time
+         --> placing the code
+         --> creating the image
+         --> running the image
+-- By using "docker file reference" can build custom images 
+-- (Ref: https://docs.docker.com/reference/dockerfile/)
+
+========================
+DOCKER FILE INSTRUCTIONS
+========================
+
+ {--> FROM  ("FROM" should be the first instruction in Dockerfile. It represents "base OS". There is an exception ARG)
+      ----
+      -- create EC2 instance & login to server (mobaxterm)
+      -- Install docker 
+      -- create a repo "docker-files" in "git"
+      -- git clone the repo to local 
+      -- create a "FROM" folder in "docker-files" (docker-files/FROM)
+      -- create a "Dockerfile"(D- caps always) file inside "FROM" folder 
+      -- write a "FROM" instruction in "Dockerfile" - (FROM almalinux:9) 
+                  -- docker-files
+                  -- RUN
+                     -- Dockerfile
+                        FROM almalinux:9
+      -- git clone "docker-files"-(git add . ; git commit -m "docker"; git push origin main) in bash
+      -- git clone the repo in "server" (mobaxterm) -(https://github.com/Shahul1507/docker-files.git)
+      -- cd docker-files
+      -- cd FROM
+      -- run image build cmd - (docker build -t from:v1 .)
+      -- run cmd (docker images)
+                     
+   So, "FROM" instruction pulls the base os from "docker-hub" and builds the "custom-image"
+   Hence , [from v1 = almalinux:9] 
+ }
+
+ {-->  RUN - (RUN instruction is used to configure image like installing packages, configure, etc. RUN instruction runs at the time of image building.)
+      -----
+      -- create a "RUN" folder in "docker-files" (docker-files/RUN)
+      -- create a "Dockerfile"(D- caps always) file inside "RUN" folder 
+      -- write a "RUN" instruction in "Dockerfile" 
+            -- docker-files
+               -- RUN
+                  -- Dockerfile
+                     FROM almalinux:9
+                     RUN dnf install nginx -y              
+      -- git clone "docker-files"-(git add . ; git commit -m "docker"; git push origin main) in bash 
+      -- cd .. (mobaxterm)
+      -- git pull https://github.com/Shahul1507/docker-files.git  
+      -- cd RUN
+      -- run image build cmd - (docker build -t run:v1 .)   
+      -- run cmd (docker images)
+ }  
+ 
+ {-->  CMD - (CMD instruction runs at the time of container creation. It keeps container running)
+      -----
+      -- create a "CMD" folder in "docker-files" (docker-files/RUN)
+      -- create a "Dockerfile"(D- caps always) file inside "CMD" folder 
+      -- write a "CMD" instruction in "Dockerfile" 
+            -- docker-files
+               -- CMD
+                  -- Dockerfile
+                    { FROM almalinux:9
+                      RUN dnf install nginx -y  
+                      CMD ["nginx","-g","daemon off;"] -- (nginx -g daemon-off --> runs nginx in foreground)         
+                    }
+      -- git clone "docker-files"-(git add . ; git commit -m "docker"; git push origin main) in bash 
+      -- cd .. (mobaxterm)
+      -- git pull https://github.com/Shahul1507/docker-files.git  
+      -- cd CMD
+      -- run the cmd - (docker build -t cmd:v1 .) -- docker build --> image creation --> RUN
+      -- run the cmd - (docker run -d cmd:v1)  -- docker run --> container creation --> CMD    
+      -- run cmd (docker images)
+      -- run cmd (docker rm -f e6b5a744ffed ) -- killing the running container 
+      -- run cmd (docker run -d -p 80:80 cmd:v1)
+      -- check public_ip:80 of server in browser
+ }  
+
+ {Pushing the image to docker-hub
+  -------------------------------
+  
+      -- run cmd (docker images)
+      -- run cmd to re-tag (docker tag cmd:v1 shahauldoc/nginx:v1) -- (docker tag <imagename>:<version> <username>/<imagename>:<version> )
+      -- run cmd (docker images) -check the image name
+      -- login to docker-hub (docker login -u shahuldoc)
+      -- enter password
+      -- run cmd ( docker push shahuldoc/nginx:v1)
+ }
+
+ {-->LABEL - (LABELS are used to filter the images.It adds metadata to the image, description, who is the owner, which projects)
+     -----
+   -- create a "LABEL" folder in "docker-files" (docker-files/RUN)
+   -- create a "Dockerfile"(D- caps always) file inside "LABEL" folder 
+   -- write a "LABEL" instruction in "Dockerfile" 
+         -- docker-files
+            -- LABEL
+               -- Dockerfile
+   -- git clone "docker-files"-(git add . ; git commit -m "docker"; git push origin main) in bash 
+   -- cd .. (mobaxterm)
+   -- git pull https://github.com/Shahul1507/docker-files.git  
+   -- cd LABEL             
+   -- run image build cmd - (docker build -t label:v1 .)      
+   -- run cmd (docker images)
+   LABEL dosen't effect any functionality it only adds information to the image.
+   ex: when there are multiple images. LABEL helps to filter the image out of all.
+   -- cmd:(docker images -f 'label=company=joindevops')
+}
+
+{-->EXPOSE - (used to let the users know what are the ports this container will open when it runs.. EXPOSE instruction will not effect functionality it will only gives information)
+    -----
+      -- create a "EXPOSE" folder in "docker-files" (docker-files/RUN)
+      -- create a "Dockerfile"(D- caps always) file inside "EXPOSE" folder 
+      -- write a "EXPOSE" instruction in "Dockerfile" 
+            -- docker-files
+               -- EXPOSE
+                  -- Dockerfile
+                        FROM almalinux:9
+                        RUN dnf install nginx -y  
+                        EXPOSE 80
+                        CMD ["nginx","-g","daemon off;"]    
+      -- git clone "docker-files"-(git add . ; git commit -m "docker"; git push origin main) in bash 
+      -- cd .. (mobaxterm)
+      -- git pull https://github.com/Shahul1507/docker-files.git  
+      -- cd EXPOSE            
+      -- run image build cmd - (docker build -t expose:v1 .)    
+      -- run cmd (docker images)
+      -- run cmd (docker inspect <container-ID>)
+}
+
+{-->ENV - (sets the environment variables, these can be used inside container)
+    -----
+     -- create a "ENV" folder in "docker-files" (docker-files/RUN)
+     -- create a "Dockerfile"(D- caps always) file inside "ENV" folder 
+     -- write a "ENV" instruction in "Dockerfile" 
+           -- docker-files
+              -- ENV
+                 -- Dockerfile
+                     FROM almalinux:9
+                     ENV course="DevOps with AWS" \
+                           trainer="sivakumar reddy" \
+                           duration="120hrs"  
+     -- git clone "docker-files"-(git add . ; git commit -m "docker"; git push origin main) in bash 
+     -- cd .. (mobaxterm)
+     -- git pull https://github.com/Shahul1507/docker-files.git  
+     -- cd ENV            
+     -- run image build cmd - (docker build -t env:v1 .)    
+     -- run cmd (docker images)
+     -- run cmd (docker run -d env:v1 sleep 100)
+     -- run cmd (docker ps )
+     -- run cmd (docker exec -it <container-ID> bash)
+     -- type (env)
+}
+
+
+{-->COPY - (used to copy files from local to image.)
+   -----
+    -- create a "COPY" folder in "docker-files" (docker-files/RUN)
+    -- create a "Dockerfile"(D- caps always) file inside "COPY" folder 
+    -- write a "COPY" instruction in "Dockerfile" 
+          -- docker-files
+             -- COPY
+                -- Dockerfile
+                     FROM almalinux:9
+                     RUN dnf install nginx -y
+                     RUN rm -rf /usr/share/nginx/html/index.html
+                     COPY index.html /usr/share/nginx/html/index.html
+                     CMD ["nginx", "-g", "daemon off;"] 
+                -- index.html     
+    -- git clone "docker-files"-(git add . ; git commit -m "docker"; git push origin main) in bash 
+    -- cd .. (mobaxterm)
+    -- git pull https://github.com/Shahul1507/docker-files.git  
+    -- cd COPY             
+    -- run image build cmd - (docker build -t COPY:v1 .)  
+    -- run the cmd ( docker run -d -p 8080:80 copy:v1 )
+    -- check public_ip:8080 of server in browser
+}
+
+{-->ADD 
+   -----
+    -- ADD also does same as copy, but it has 2 extra capabilities
+         1. It can get files from internet
+         2. It can extract the files into image
+
+    -- create a "ADD" folder in "docker-files" (docker-files/RUN)
+    -- create a "Dockerfile"(D- caps always) file inside "ADD" folder 
+    -- write a "ADD" instruction in "Dockerfile" 
+          -- docker-files
+             -- ADD
+                -- Dockerfile
+                     FROM almalinux:9
+                     RUN dnf install nginx -y
+                     RUN rm -rf /usr/share/nginx/html/index.html
+                     ADD https://raw.githubusercontent.com/daws-81s/expense-infra-dev/refs/heads/main/readme.MD /usr/share/nginx/html/index.html
+                     RUN chmod +x /usr/share/nginx/html/index.html
+                     ADD sample-1.tar /tmp/
+                     CMD ["nginx", "-g", "daemon off;"]
+                 -- sample-1.tar    
+    -- git clone "docker-files"-(git add . ; git commit -m "docker"; git push origin main) in bash 
+    -- cd .. (mobaxterm)
+    -- git pull https://github.com/Shahul1507/docker-files.git  
+    -- cd ADD             
+    -- run image build cmd - (docker build -t add:v1 .)  
+    -- run the cmd ( docker run -d -p 8081:80 copy:v1 )
+    -- run cmd (docker ps )
+    -- run the cmd (docker exec -it <container-id> bash)
+    -- check public_ip:8081 of server in browser
+}
+
+{
+FROM should be the first instruction in Dockerfile. It represents base OS. There is an exception ARG
+
+Dockerfile
+
+FROM <base-os>
+
+RHEL-9: VM OS --> High memory
+almalinux == Rhel
+
+How you build docker image?
+
+docker build -t <image-name>:<version> . --> . represents current folder have Dockerfile file
+
+RUN
+------------
+RUN instruction is used to configure image like installing packages, configure, etc. RUN instruction runs at the time of image building.
+
+CMD
+------------
+CMD instruction runs at the time of container creation. It keeps container running
+
+systemctl start backend --> infinite time
+systemctl start nginx --> /etc/systemd/system/nginx.service
+systemctl only works for full server, it will not work for contianers
+
+nginx -g daemon-off --> runs nginx in foreground
+
+docker build --> image creation --> RUN
+docker run --> container creation --> CMD
+
+nginx:v1
+
+username/image-name:version
+
+docker tag cmd:v1 joindevops/nginx:v1
+
+docker login -u <user-name>
+
+docker push joindevops/nginx:v1
+
+docker pull joindevops/nginx:v1
+
+LABEL
+----------
+it adds metadata to the image, description, who is the owner, which projects. LABELS are used to filter the images
+
+EXPOSE
+---------
+used to let the users know what are the ports this container will open when it runs.. EXPOSE instruction will not effect functionality it will only gives information
+
+ENV
+----------
+sets the environment variables, these can be used inside container
+
+COPY
+-----------
+used to copy files from local to image.
+
+ADD
+-----------
+ADD also does same as copy, but it has 2 extra capabilities
+1. It can get files from internet
+2. It can extract the files into image
+
+connect to backend server and manually try to connect
+telnet 
+
+}
+
+Interview:
+----------
+RUN vs CMD
+----------
+RUN instruction runs at image creation
+CMD instruction runs at container creation
+
+COPY vs ADD
+-----------
+COPY used to copy files from local to image
+ADD also does same as copy, but it has 2 extra capabilities
+         1. It can get files from internet
+         2. It can extract the files into image

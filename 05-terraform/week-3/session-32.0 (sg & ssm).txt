@@ -24,9 +24,9 @@ for-code : https://github.com/daws-81s/terraform-aws-security-group.git
     -- We will use "Security-group_module" in aws 
     -- and connect "sg-module" with "VPC" 
 
-----------------------
+======================
 security_group-Module: (ref: session-32.1) for code
-----------------------
+======================
 -->	{Create (terrform-aws-security-group) folder : 
 	-------------------------------------------	
 	--	{Steps: (main.tf)
@@ -110,9 +110,9 @@ security_group-Module: (ref: session-32.1) for code
 	-- terraform validate
 	-- terraform plan
 	-- terraform apply -auto-approve” and check.	
-
+=====================
 SSM Parameters store: (Systems Manager) (ref: session-32.2) for code
---------------------
+=====================
 Restructure the terraform project(using ssm parameters store):
 ---------------------------------
  -- Need for resturcturing the program : 
@@ -180,7 +180,7 @@ create “expense-infra-dev” folder
 
 
 		}
-
+    }
 	-- terraform init 
 	-- terraform validate  { here we get the error_message:
 							--╷
@@ -193,7 +193,7 @@ create “expense-infra-dev” folder
 							
 						}	 
 	
-	}
+	
 
 (challenge) : In (20-sg/sg.tf) - we have "vpc_id = module.vpc.vpc_id" but "vpc module" is in another folder to access vpc data, terraform will not be able to access data directly from another folder.
 
@@ -251,24 +251,68 @@ locals{
 
 --update the "vpc_id" in (20-sg/main.tf) sg-module
 
-main.tf
--------
-module "mysql_sg" {
-    source = "../../terraform-aws-security-group"
-    project_name = var.project_name
-    environment = var.environment
-    sg_name = "mysql"
-    vpc_id = local.vpc_id
-    common_tags = var.common_tags
-    sg_tags = var.mysql_sg_tags
-}
+ --	main.tf
+	-------
+	--	module "mysql_sg" {
+			source = "../../terraform-aws-security-group"
+			project_name = var.project_name
+			environment = var.environment
+			sg_name = "mysql"
+			vpc_id = local.vpc_id
+			common_tags = var.common_tags
+			sg_tags = var.mysql_sg_tags
+		}
 
 }
 -- terraform plan
 -- terraform apply -auto-approve   
 
--- similarly,create modules "backend_sg" and "frontend_sg"
-   we have created Security groups.
+--> {similarly,create modules "backend_sg" and "frontend_sg"
+
+	--> backend_sg & frontend_sg
+	-- (expense-infra-dev/20-sg/main.tf)
+	-- main.tf:
+		-------
+		--	module "backend_sg" {
+				# source = "../../terraform-aws-security-group"
+				source = "git::https://github.com/Shahul1507/terraform-aws-security-group.git?ref=main"
+				project_name = var.project_name
+				environment = var.environment
+				sg_name = "backend"
+				vpc_id = local.vpc_id
+				common_tags = var.common_tags
+				sg_tags = var.backend_sg_tags
+			}	
+		
+		-- module "frontend_sg" {
+				# source = "../../terraform-aws-security-group"
+				source = "git::https://github.com/Shahul1507/terraform-aws-security-group.git?ref=main"
+				project_name = var.project_name
+				environment = var.environment
+				sg_name = "frontend"
+				vpc_id = local.vpc_id
+				common_tags = var.common_tags
+				sg_tags = var.frontend_sg_tags
+		}
+
+	-- variable.tf:
+		-----------
+	 --	variable "backend_sg_tags" {     #backend module
+			default = {
+				Component = "backend"
+			}
+		}
+		
+	 --	variable "frontend_sg_tags" {     #frontend module
+			default = {
+				Component = "frontend"
+			}
+		}
+}
+-- terraform init 
+-- terraform validate
+-- terraform plan
+-- terraform apply -auto-approve” and check(no_errors)	
 
 {
 security_group-names for expense project:

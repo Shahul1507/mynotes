@@ -1,3 +1,26 @@
+                                        ------------- 
+                                        | TERRAFORM |  
+                                        -------------
+                                            DAY-11
+                                        -------------		
+                                        | CONTENTS	|
+                                        -------------
+                                        ---> security group (ingress rules)	
+                                        ---> Bastion Host
+                                        ---> Applications using EC2
+                                        ---> Terraform and Ansible integration
+                                        ---> Expense project completed
+                                                                                    
+                                        
+
+References: 
+----------
+Note-link: https://vijaycodes.hashnode.dev/expense-project-using-terraform
+for-code : https://github.com/daws-81s/terraform-aws-security-group.git
+         : https://github.com/daws-81s/expense-terraform.git
+
+
+{
 Mysql --> backend
 
 Mysql
@@ -47,5 +70,5 @@ ec2 instance user data
 -------------------
 when instanc created, AWS will run this user instructions with root access automatically
 
-
+}
 
