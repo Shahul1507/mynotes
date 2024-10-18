@@ -127,15 +127,22 @@ DOCKER FILE INSTRUCTIONS
          -- docker-files
             -- LABEL
                -- Dockerfile
+                  FROM almalinux:9
+                  LABEL author="sivakumar reddy" \
+                        company="joindevops" \
+                        topic="dockerfiles" \
+                        duration="2hrs"
    -- git clone "docker-files"-(git add . ; git commit -m "docker"; git push origin main) in bash 
    -- cd .. (mobaxterm)
    -- git pull https://github.com/Shahul1507/docker-files.git  
    -- cd LABEL             
    -- run image build cmd - (docker build -t label:v1 .)      
    -- run cmd (docker images)
+   -- run cmd (cat Dockerfile) and check the data displays
    LABEL dosen't effect any functionality it only adds information to the image.
    ex: when there are multiple images. LABEL helps to filter the image out of all.
-   -- cmd:(docker images -f 'label=company=joindevops')
+   -- run cmd:(docker images -f 'label=company=joindevops')
+   -- run cmd (docker insoect <image_id>) 
 }
 
 {-->EXPOSE - (used to let the users know what are the ports this container will open when it runs.. EXPOSE instruction will not effect functionality it will only gives information)
@@ -232,9 +239,11 @@ DOCKER FILE INSTRUCTIONS
     -- git pull https://github.com/Shahul1507/docker-files.git  
     -- cd ADD             
     -- run image build cmd - (docker build -t add:v1 .)  
-    -- run the cmd ( docker run -d -p 8081:80 copy:v1 )
+    -- run the cmd ( docker run -d -p 8081:80 add:v1 )
     -- run cmd (docker ps )
     -- run the cmd (docker exec -it <container-id> bash)
+    -- run cmd (cd /tmp/)
+    -- run cmd (ls)
     -- check public_ip:8081 of server in browser
 }
 
