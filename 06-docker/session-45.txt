@@ -1,0 +1,22 @@
+MySQL
+--------------
+1. I take one base OS like almalinux:9
+2. install mysql server
+
+can I directly take mysql server official image.
+
+Mysql --> They can run few sql command to configure server
+
+Backend --> backend can connect to mysql server and run the queries.
+
+Docker network
+-----------------
+every VM get access to internet from AWS ISP.172.31.27.183
+
+docker0: is a virtual n/w interface 172.17.0.1. It acts as modem to the containers inside VM.
+
+
+Backend
+-------------
+
+docker containers can't be communicated using default network. You have to create your own network.

@@ -280,15 +280,90 @@ so, "WORKDIR" is used to set the current working directory inside docker image
     }  
 4. ARG instruction before FROM, is only valid until FROM, it cant be accessed after FROM
 
-}
 ARG vs ENV
 ---------
 1. ENV variables can be accessed in image build time and container both.
 2. ARG is only accessed at the time of image creation.
 3. You can use ARG instruction before FROM in one special case i.e to supply version to the base image.
 4. ARG instruction before FROM is only valid until FROM, it cant be accessed after FROM
+}
+
+{-->ONBUILD- (is used to trigger few instructions at build when a user is using our image.)
+    -------
+    -- create a "ONBUILD" folder in "docker-files" (docker-files/ONBUILD)
+    -- create a "Dockerfile"(D- caps always) file inside "ONBUILD" folder 
+    -- write a "ONBUILD" instruction in "Dockerfile" 
+          -- docker-files
+             -- ONBUILD
+                -- Dockerfile
+                    FROM almalinux:9
+                    RUN dnf install nginx -y
+                    RUN rm -rf /usr/share/nginx/html/index.html
+                    # This onbuild instruction runs only, when any user uses your image
+                    ONBUILD COPY index.html /usr/share/nginx/html/index.html
+                    CMD ["nginx", "-g", "daemon off;"]
+
+    -- git clone "docker-files"-(git add . ; git commit -m "docker"; git push origin main) in bash  
+    -- git pull https://github.com/Shahul1507/docker-files.git  
+    -- cd ../ONBUILD
+    -- run image build cmd - (docker build -t onbuild:v1 .) #we see onbuild is nor triggered
+    -- run cmd (docker images) 
+NOW:
+    -- create a "test" folder in "docker-files/ONBUILD"
+          -- docker-files
+             -- ONBUILD
+                -- Dockerfile
+                    FROM onbuild:v1  
+    -- git clone "docker-files"-(git add . ; git commit -m "docker"; git push origin main) in bash  
+    -- git pull https://github.com/Shahul1507/docker-files.git 
+    -- cd test
+    -- run image build cmd - (docker build -t onbuild-test:v1 .) #we see the error "index.html"
+    #condition - "index.html" should be there in working directory to use our image
+    
+    -- copy "index.html" to "test" folder (text/index.html)
+    -- git clone "docker-files"-(git add . ; git commit -m "docker"; git push origin main) in bash  
+    -- git pull https://github.com/Shahul1507/docker-files.git 
+    -- run image build cmd - (docker build -t onbuild-test:v1 .)
+    -- run cmd (docker run -d -p 8080:80 onbuild-test:v1)
+    -- check public_ip:8080 of server in browser
+
+}
 
 
+==========
+Interview:
+========== 
+{
+Q:CMD vs ENTRYPOINT
+  ------------------
+A:  1. CMD can be overridden at runtime
+    2. You can't override ENTRYPOINT like CMD. 
+        If you try to do it will go and append to the entrypoint command
+    3. for better results and best practices. 
+        CMD can provide args to ENTRYPOINT, 
+        So we can mention default args through CMD and can override those at run time..  
+
+Q:ARG vs ENV
+  ---------
+A:  1. ENV variables can be accessed in image build time and container both.
+    2. ARG is only accessed at the time of image creation.
+    3. You can use ARG instruction before FROM in one special case i.e to supply version to the base image.
+    4. ARG instruction before FROM is only valid until FROM, it cant be accessed after FROM
+    
+Q:(How to access ARG values inside container?)
+A: By setting arg value to env variable [ENV var-name=$var-name = ENV duration = $duration ]
+Ex:FROM almalinux:9
+    ARG course = "Devops with AWS"
+        duration = "120hrs"
+    ENV duration = $duration    
+    RUN echo "course:$course","duration:$duration"
+    CMD ["sleep","100"]  
+
+   execute : check at both build and run time
+            - docker build -t arg:v1 .
+            - docker run -d arg:v1
+            - docker exec -it <container-id> bash
+}
 
 {
 ENTRYPOINT
