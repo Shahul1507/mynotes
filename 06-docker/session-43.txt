@@ -1,9 +1,9 @@
-                                            ----------
-                                            | DOCKER |  
-                                            ----------
-                                               DAY-2
+                                             ----------
+                                             | DOCKER |  
+                                             ----------
+                                                DAY-2
                                             -------------		
-                                            | CONTENTS	|
+                                            |  CONTENTS	| 
                                             -------------
                                             ---> Dockerfile
                                             ---> Dockerfile instructions
@@ -20,7 +20,7 @@ References: {
 ----------
 										
 Docker-file-Ref: ( https://docs.docker.com/reference/dockerfile/)
-for-code(git-hub) : 
+for-code(git-hub) : https://github.com/Shahul1507/docker-files.git  
 					 
 }                                            
 ============
@@ -191,7 +191,7 @@ DOCKER FILE INSTRUCTIONS
 }
 
 
-{-->COPY - (used to copy files from local to image.)
+{-->COPY - (used to copy files from workspace to image.)
    -----
     -- create a "COPY" folder in "docker-files" (docker-files/RUN)
     -- create a "Dockerfile"(D- caps always) file inside "COPY" folder 
@@ -214,12 +214,10 @@ DOCKER FILE INSTRUCTIONS
     -- check public_ip:8080 of server in browser
 }
 
-{-->ADD 
-   -----
-    -- ADD also does same as copy, but it has 2 extra capabilities
-         1. It can get files from internet
-         2. It can extract the files into image
-
+{-->ADD   -- ADD also does same as copy, but it has 2 extra capabilities
+   -----       1. It can get files from internet
+               2. It can extract the files into image
+   
     -- create a "ADD" folder in "docker-files" (docker-files/RUN)
     -- create a "Dockerfile"(D- caps always) file inside "ADD" folder 
     -- write a "ADD" instruction in "Dockerfile" 

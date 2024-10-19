@@ -1,10 +1,37 @@
+                                        ----------
+                                        | DOCKER |  
+                                        ----------
+                                           DAY-3
+                                        -------------		
+                                        |  CONTENTS	| 
+                                        --------------
+                                        ---> Dockerfile instructions
+                                            -- ENTRYPOINT
+                                            -- CMD vs ENTRYPOINT
+                                            -- USER
+                                            -- WORKDIR
+                                            -- ARG
+                                            -- ARG vs ENV
+                                            -- ONBUILD
+                                            
+
+
+
+Recap:
+======
+Docker commands used:
+---------------------
 docker build -t username/imagename:version . --> Dockerfile is required in current folder
+docker images -f 'label=company=joindevops'  --> to filter images  
 docker tag imagename:version username/imagename:version
 docker login
 docker push username/imagename:version
 docker run -d -p 80:80 username/imagename:version
 docker exec -it username/imagename:version bash
 
+
+Docker Instructions used:
+-------------------------
 FROM --> Should be the first instruction to refer base OS
 RUN --> installing packages and configuring image. runs at build time
 CMD --> Runs at container creation time, it keeps container running ["command-name", "params"]
@@ -14,8 +41,258 @@ COPY --> copies the files from workspace to image
 ADD --> 1. can download files directly from internet, can untar directly into image
 ENV --> sets the env variables to the container
 
+
+========================
+DOCKER FILE INSTRUCTIONS
+========================
+{-->ENTRYPOINT 
+    -----------
+    -- create a "ENTRYPOINT" folder in "docker-files" (docker-files/RUN)
+    -- create a "Dockerfile"(D- caps always) file inside "ENTRYPOINT" folder 
+
+    (If we give argument to CMD with "ping Yahoo.com" at runtime ) - with "CMD"
+    ------------------------------------------------------------
+ {   -- write a "ENTRYPOINT" instruction in "Dockerfile" 
+          -- docker-files
+             -- ENTRYPOINT
+                -- Dockerfile
+                  { FROM almalinux:9 
+                    CMD ["ping","google.com"]          
+                  }
+           
+  -- git clone "docker-files"-(git add . ; git commit -m "docker"; git push origin main) in bash 
+    -- git pull https://github.com/Shahul1507/docker-files.git  
+    -- cd ENTRYPOINT
+    -- run the cmd - (docker build -t entry:v1 .) 
+    -- run the cmd - (docker run -d entry:v1 sleep 100)    
+    -- run cmd (docker ps)
+"If"-- run the cmd - (docker run -d entry:v1 ping yahoo.com)   
+    -- run cmd (docker logs -f <container_ID>) --> here we see "google.com" is overridden with "yahoo.com" at runtime
+    -- run cmd (docker rm -f e6b5a744ffed ) -- killing the running container
+
+ }
+
+   (If we give argument to ENTRYPOINT "ping Yahoo.com" at runtime) - with "ENTRYPOINT"
+   -------------------------------------------------------------- 
+ {  -- write a "ENTRYPOINT" instruction in "Dockerfile" 
+    -- docker-files
+        -- ENTRYPOINT
+            -- Dockerfile
+                { FROM almalinux:9 
+                # CMD ["ping","google.com"] 
+                  ENTRYPOINT ["ping","google.com"]      
+                }
+    -- git clone "docker-files"-(git add . ; git commit -m "docker"; git push origin main) in bash 
+    -- git pull https://github.com/Shahul1507/docker-files.git  
+    -- run the cmd - (docker build -t entry:v1 .) 
+    -- run the cmd - (docker run -d entry:v1)  
+    -- run cmd (docker logs -f <container_ID>)  --> google.com is pinged
+    -- run cmd (docker ps)
+    -- run cmd (docker rm -f <container-ID>) -- killing the running container 
+
+"If"-- run the cmd - (docker run -d entry:v1 yahoo.com)   
+    -- run cmd (docker logs -f <container_ID>) --> here we see "google.com" is overridden with "yahoo.com" at runtime
+    -- run cmd (docker ps -a -no -trunc) --> container is exited due to command got invalid 
+ } 
+
+    (If we give argument to ENTRYPOINT "ping Yahoo.com" at runtime) -WITH "CMD" & "ENTYRPOINT"
+    --------------------------------------------------------------- 
+ { -- write a "ENTRYPOINT" instruction in "Dockerfile" 
+        -- docker-files
+            -- ENTRYPOINT
+                -- Dockerfile
+                    { FROM almalinux:9 
+                    CMD ["google.com"]  #default argument
+                    ENTRYPOINT ["ping"]  #argument = CMD    
+                    }
+    -- git clone "docker-files"-(git add . ; git commit -m "docker"; git push origin main) in bash 
+    -- git pull https://github.com/Shahul1507/docker-files.git  
+    -- run the cmd - (docker build -t entry:v1 .) 
+    -- run the cmd - (docker run -d entry:v1)  
+    -- run cmd (docker logs -f <container_ID>)  --> google.com is pinged
+    -- run cmd (docker ps)
+    -- run cmd (docker rm -f <container-ID>) -- killing the running container 
+
+"If"-- run the cmd - (docker run -d entry:v1 yahoo.com)   
+    -- run cmd (docker logs -f <container_ID>) --> here we see "google.com" is replaced with "yahoo.com" at runtime
+   
+ } 
+  so,we can ping any website. This helps in building dynamic image 
+
+1. CMD can be overridden at runtime
+2. You can't override ENTRYPOINT like CMD. 
+    If you try to do it will go and append to the entrypoint command
+3. for better results and best practices. 
+    CMD can provide args to ENTRYPOINT, 
+    So we can mention default args through CMD and can override those at run time..
+
+
+}
+
+{-->USER - (for security you should not run containers using root user, it must be on normal user. Atleast last instruction should USER <some-username>)
+    -----
+     -- create a "USER" folder in "docker-files" (docker-files/RUN)
+     -- create a "Dockerfile"(D- caps always) file inside "USER" folder 
+     -- write a "USER" instruction in "Dockerfile" 
+           -- docker-files
+              -- USER
+                 -- Dockerfile
+                    FROM almalinux:9
+                    RUN useradd expense  # -- root user
+                    USER expense         # -- normal user after this line we cannot add user (b/c of normal user)
+                    CMD ["sleep", "100"]
+                     
+     -- git clone "docker-files"-(git add . ; git commit -m "docker"; git push origin main) in bash
+     -- git pull https://github.com/Shahul1507/docker-files.git  
+     -- cd ../USER             
+     -- run image build cmd - (docker build -t user:v1 .)  
+     -- run the cmd ( docker run -d user:v1 )
+     -- run the cmd (docker exec -it <container-id> bash) #here we have root access
+     -- run the cmd (id) #it should be with normal user
+}
+
+{-->WORKDIR - (is used to set the current working directory inside docker image)
+    -------
+     -- create a "WORKDIR" folder in "docker-files" (docker-files/RUN)
+     -- create a "Dockerfile"(D- caps always) file inside "WORKDIR" folder 
+     -- write a "WORKDIR" instruction in "Dockerfile" 
+           -- docker-files
+              -- WORKDIR
+                 -- Dockerfile
+                    FROM almalinux:9
+                    RUN mkdir/tmp/docker
+                    RUN cd/tmp/docker
+                    RUN pwd
+                    RUN echo "Hello">hello.txt
+                    CMD ["sleep","100"] 
+     -- git clone "docker-files"-(git add . ; git commit -m "docker"; git push origin main) in bash
+     -- git pull https://github.com/Shahul1507/docker-files.git  
+     -- cd ../WORKDIR             
+     -- run image build cmd - (docker build -t workdir:v1 .)  
+     -- run cmd ( docker run -d workdir:v1 )
+     -- run cmd (docker exec -it <container-id> bash )
+     -- run cmd (cd /tmp/docker/) 
+     -- run cmd (ls -l) # no hello.txt file
+     -- run cmd (find / -name "hello.txt")
+     -- run cmd (cd / & ls -l) # hello.txt is in root directory 
+so, "cd" command won't work in docker .we use "WORKDIR" 
+
+     -- write a "WORKDIR" instruction in "Dockerfile" 
+        -- docker-files
+            -- WORKDIR
+                -- Dockerfile
+                    FROM almalinux:9
+                    RUN mkdir/tmp/docker
+                    WORKDIR /tmp/docker
+                    RUN pwd
+                    RUN echo "Hello">hello.txt
+                    CMD ["sleep","100"] 
+    -- git clone "docker-files"-(git add . ; git commit -m "docker"; git push origin main) in bash
+    -- git pull https://github.com/Shahul1507/docker-files.git  
+    -- run image build cmd - (docker build -t workdir:v1 .)  
+    -- run cmd ( docker run -d workdir:v1 )
+    -- run cmd (docker exec -it <container-id> bash )
+    -- run cmd (pwd) # we are in /tmp/docker
+    -- run cmd (ls) # we can see "hello.txt"
+so, "WORKDIR" is used to set the current working directory inside docker image    
+}
+
+{-->ARG- (ARG is used to set the variables at build time only, not inside the container)
+    -----
+     -- create a "ARG" folder in "docker-files" (docker-files/RUN)
+     -- create a "Dockerfile"(D- caps always) file inside "ARG" folder 
+     -- write a "ARG" instruction in "Dockerfile" 
+           -- docker-files
+              -- ARG
+                 -- Dockerfile
+                    FROM almalinux:9
+                    ARG course = "Devops with AWS"
+                        duration = "120hrs"
+                    RUN echo "course:$course","duration:$duration"
+                    CMD ["sleep","100"]     
+                  
+     -- git clone "docker-files"-(git add . ; git commit -m "docker"; git push origin main) in bash 
+     -- git pull https://github.com/Shahul1507/docker-files.git  
+     -- cd ../ARG            
+     -- run image build cmd - (docker build -t arg:v1 .) # args will be displayed at image build time
+     -- run cmd ( docker run -d arg:v1 )
+     -- run cmd (docker exec -it <container-id> bash ) 
+     -- run cmd (env) # we cant see args variablesat container level
+1. ARG variables are set at the time image build time not at container level     
+
+(Now check  :If - "ARG" is replaced with "ENV")
+
+      {  -- Dockerfile
+            FROM almalinux:9
+            ENV course = "Devops with AWS"
+                duration = "120hrs"
+            RUN echo "course:$course","duration:$duration"
+            CMD ["sleep","100"]  
+        -- git clone "docker-files"-(git add . ; git commit -m "docker"; git push origin main) in bash 
+        -- git pull https://github.com/Shahul1507/docker-files.git             
+        -- run image build cmd - (docker build -t arg:v1 .) # ENV variables will be displayed at image build time
+        -- run cmd ( docker run -d arg:v1 )
+        -- run cmd (docker exec -it <container-id> bash )     
+        -- run cmd (env) # we can see args variables at container level
+      }
+1. ENV variables can be accessed in image build time and container both.
+2. ARG is only accessed at the time of image creation.
+
+(Override default ARG variables)
+       { -- Dockerfile
+           FROM almalinux:9
+           ARG course = "Devops with AWS"
+               duration = "120hrs"
+            RUN echo "course:$course","duration:$duration"
+            CMD ["sleep","100"]     
+        -- "docker-files"-(git add . ; git commit -m "docker"; git push origin main) in bash 
+        -- git pull https://github.com/Shahul1507/docker-files.git             
+        -- run image build cmd - (docker build -t arg:v1 --build-arg course=docker .) # value will be overridden
+       } 
+(Override default version ARG variables)
+      {  -- Dockerfile
+            ARG version
+            FROM almalinux:${version}
+            # FROM almalinux:${version=-9} #it takes version:9 if not provided at run time
+            # we can give default version also and can be overridden at runtime
+            ARG course = "Devops with AWS"
+                duration = "120hrs"
+            RUN echo "course:$course","duration:$duration"
+            CMD ["sleep","100"]     
+        -- "docker-files"-(git add . ; git commit -m "docker"; git push origin main) in bash 
+        -- git pull https://github.com/Shahul1507/docker-files.git             
+        -- run image build cmd - (docker build -t arg:v1 --build-arg course=docker .) # we get the error ,no version is mentioned at run time 
+    NOW:-- run image build cmd - (docker build -t arg:v1 --build-arg course=docker --build-arg version=8.)  # we can see it pulls the version 8          
+      }
+3. You can use ARG instruction before FROM in one special case i.e to supply version to the base image.
+(RUN echo "course:$course","duration:$duration",version=$version)
+    {  -- Dockerfile
+            ARG version
+            FROM almalinux:${version=-9}
+            ARG course = "Devops with AWS"
+                duration = "120hrs"
+            RUN echo "course:$course","duration:$duration","version:$version"
+            CMD ["sleep","100"]     
+        -- "docker-files"-(git add . ; git commit -m "docker"; git push origin main) in bash 
+        -- git pull https://github.com/Shahul1507/docker-files.git             
+        -- run image build cmd - (docker build -t arg:v1 --build-arg course=docker .)
+        #we see there is no version details displayed 
+    }  
+4. ARG instruction before FROM, is only valid until FROM, it cant be accessed after FROM
+
+}
+ARG vs ENV
+---------
+1. ENV variables can be accessed in image build time and container both.
+2. ARG is only accessed at the time of image creation.
+3. You can use ARG instruction before FROM in one special case i.e to supply version to the base image.
+4. ARG instruction before FROM is only valid until FROM, it cant be accessed after FROM
+
+
+
+{
 ENTRYPOINT
--------------
+-----------
 
 docker run -d from:v1
 
@@ -62,3 +339,4 @@ can I directly take mysql server official image.
 Mysql --> They can run few sql command to configure server
 
 Backend --> backend can connect to mysql server and run the queries.
+}
