@@ -62,7 +62,7 @@ Peering :
  
     {-->step:1 - Finding "Default" vpc id
                 --------------------------
-                -- to do so, creating a datasource for default vpc Id 
+                -- to do so, creating a datasource for "default vpc Id "
                 -- ref-link : (https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/vpc)
                 -- Append (terraform-aws-vpc/data.tf)
                    data.tf

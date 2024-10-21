@@ -1,3 +1,286 @@
+                                             ----------
+                                             | DOCKER |  
+                                             ----------
+                                                DAY-4
+                                            -------------		
+                                            | CONTENTS	| 
+                                            -------------
+                                        ---> Expense-project
+                                             -- MySQL container
+                                        ---> Docker network
+                                             -- Docker bridge network  
+                                        ---> Expense-project   
+                                             -- Backend container
+                                             -- Frontend conatiner
+                                        
+
+
+Reference link : 
+---------------
+official mysql image : https://hub.docker.com/_/mysql
+github:https://github.com/Shahul1507/expense-docker.git 
+
+================
+EXPENSE PROJECT : (refer github for all necessary pre-reqrisite files)
+================
+
+    --> create instance (docker) with 50gb volume --> (configure storage)
+    --> Install docker in the server (install-docker.sh)
+        {
+            -- login to server 
+            -- sudo su- (root access)
+            -- vim install-docker.sh
+            -- insert (press i) content from "install-docker.sh" to "vim editer" 
+            -- press "esc" and press (:)
+            -- type "wq:"
+            -- "sh install-docker.sh"
+        }
+    --> re-size the disk (proper partition) 
+        {
+            -- check disk memory : "df -hT"
+            -- take root access : "sudo su -"
+            -- we have added the storage ,yet we need to partition as per our requirement
+            -- follow "resize-disk.md" to do the partition
+               -- lsblk
+               -- sudo growpart /dev/xvda 4 ("xvda" is partition name : "4" is partition number)
+               -- sudo lvextend -l +50%FREE /dev/RootVG/rootVol
+               -- sudo lvextend -l +50%FREE /dev/RootVG/varVol
+               -- sudo xfs_growfs /
+               -- sudo xfs_growfs /var
+            -- check disk memory now: "df -hT"
+            -- exit from root access: "exit"
+        }
+    --> Create containers:
+        -- MySQL container
+        -- Backend container
+        -- frontend container
+
+================
+MySQL Container:
+================
+    {  
+        -- create "mysql" folder in "expense-docker"
+        -- expense-docker  (code)
+        -- mysql
+            { -- Dockerfile
+                    FROM mysql:8.0
+                    ENV MYSQL_ROOT_PASSWORD=ExpenseApp@1 
+                    ADD scripts/*.sql /docker-entrypoint-initdb.d
+            }
+        -- script
+            { --  schema.sql
+                    CREATE DATABASE IF NOT EXISTS transactions;
+                    USE transactions;
+                    
+                    CREATE TABLE IF NOT EXISTS transactions (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        amount INT,
+                        description VARCHAR(255)
+                    );
+                    
+                    CREATE USER IF NOT EXISTS 'expense'@'%' IDENTIFIED BY 'ExpenseApp@1';
+                    GRANT ALL ON transactions.* TO 'expense'@'%';
+                    FLUSH PRIVILEGES; 
+
+            }       
+        -- select "mysql:8.0" from docker hub
+            -- (FROM mysql:8.0)
+        -- set root-passward using "ENV" instruction (ref:https://hub.docker.com/_/mysql)    
+            -- (ENV MYSQL_ROOT_PASSWORD=ExpenseApp@1 ) 
+        -- create db_schema for "transactions" schema for "expense-project" 
+            -- put the "schema.sql" under "script" folder in "mysql" folder 
+            { schema.sql
+                CREATE DATABASE IF NOT EXISTS transactions;
+                USE transactions;
+                
+                CREATE TABLE IF NOT EXISTS transactions (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    amount INT,
+                    description VARCHAR(255)
+                );
+                
+                CREATE USER IF NOT EXISTS 'expense'@'%' IDENTIFIED BY 'ExpenseApp@1';
+                GRANT ALL ON transactions.* TO 'expense'@'%';
+                FLUSH PRIVILEGES; 
+            
+            }
+        -- Add "scripts" in Dockerfile (ADD scripts/*.sql /docker-entrypoint-initdb.d) 
+        -- which copies the ".sql" files to  "/docker-entrypoint-initdb.d"   while running the script    
+    }
+    creating-mysql-container:
+    -------------------------
+    {
+        -- git clone "expense-docker" repo to (mobaxterm) server
+        -- cd expense-docker
+        -- cd mysql & cat Dockerfile
+        -- docker build -t mysql:v1 .
+        -- docker images (check image is built)
+        -- docker run -d --name mysql mysql:v1
+        -- docker ps (check mysql container is created)
+        -- docker exec -it mysql bash
+        -- mysql -u root -pExpenseApp@1 (login to mysql_db)
+        -- show databases;
+        -- use transactions;
+        -- show tables;
+        -- select*from transactions; (mysql_db is setup is done)
+    } 
+===============
+Docker network:
+===============
+    Docker bridge network  :
+    ----------------------
+    {
+    -- check the network config : "ifconfig"
+            {
+                34.229.239.208 | 172.31.43.200 | t2.micro | null
+            [ ec2-user@ip-172-31-43-200 ~ ]$ ifconfig
+            docker0: flags=4099<UP,BROADCAST,MULTICAST>  mtu 1500
+                    inet 172.17.0.1  netmask 255.255.0.0  broadcast 172.17.255.255
+                    ether 02:42:e2:10:c3:0a  txqueuelen 0  (Ethernet)
+                    RX packets 0  bytes 0 (0.0 B)
+                    RX errors 0  dropped 0  overruns 0  frame 0
+                    TX packets 0  bytes 0 (0.0 B)
+                    TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+            enX0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 9001
+                    inet 172.31.43.200  netmask 255.255.240.0  broadcast 172.31.47.255
+                    inet6 fe80::c60:5eff:fe98:55cb  prefixlen 64  scopeid 0x20<link>
+                    ether 0e:60:5e:98:55:cb  txqueuelen 1000  (Ethernet)
+                    RX packets 157758  bytes 227663782 (217.1 MiB)
+                    RX errors 0  dropped 0  overruns 0  frame 0
+                    TX packets 23716  bytes 2446708 (2.3 MiB)
+                    TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+            lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+                    inet 127.0.0.1  netmask 255.0.0.0
+                    inet6 ::1  prefixlen 128  scopeid 0x10<host>
+                    loop  txqueuelen 1000  (Local Loopback)
+                    RX packets 0  bytes 0 (0.0 B)
+                    RX errors 0  dropped 0  overruns 0  frame 0
+                    TX packets 0  bytes 0 (0.0 B)
+                    TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+            }
+    -- from above "ifconfig"
+    -- we can see list of networks
+        
+        --> enX0 : is the "AWS" ISP - providing inetrnet to "vm" which are accessed from "AWS data-centers" (private_ip=172.31.43.200)
+        --> docker0: -- It is the VNI(virtul network interace) created by "docker" 
+                    -- "docker0" acts as a modem to all containers created in "docker" 
+                    -- if any "container" is created in "docker-server" , docker0 provides the "ip_address"
+                    -- This is called "bridge-network"
+                ex:-- 
+                here: -Docker0 has a  "private_ip" = 172.17.0.1 
+                        -docker provides entire network to containers
+                        -if 3-containers created in docker :(mysql,backend,frontend)
+                            --mysql gets a Ip-172.17.0.2
+                            --backend gets a IP-172.17.0.3
+                            --frontend gets a IP-172.17.0.4 
+    -- checking mysql_ip:
+    -----------------
+        -- docker ps
+        -- docker inspect mysql
+        {
+
+        }
+    }
+===================
+Backend container : 
+===================
+    {
+        -- create "backend" folder in "expense-docker"
+        -- Download code from "https://expense-builds.s3.us-east-1.amazonaws.com/expense-backend-v2.zip" # ref expense doc:Download the backend content      
+        -- unzip "expense-backend-v2.zip"
+        -- copy the content to "backend" folder in "expense-docker"
+        -- create "Dockerfile" in frontend folder
+        -- write a code refering to expense doc.
+        -- Dockerfile
+                FROM node:20         # create node js
+                EXPOSE 8080    
+                ENV DB_HOST="mysql"   # declared host
+                RUN mkdir /opt/server  # created directory
+                WORKDIR /opt/server    # moving to directory
+                COPY package.json .    # copied all json files in server
+                COPY *.js .           # copied all .js files in serve
+                RUN npm install       # installed all dependencies
+                CMD ["node", "index.js"] #executing node and index.js
+    }
+    creating-backend-container:
+    --------------------------
+    {
+        -- git pull "expense-docker" repo to (mobaxterm) server
+        -- cd expense-docker
+        -- cd backend
+        -- docker build -t backend:v1 .
+        -- docker images (check image is built)
+        -- docker run -d --name backend backend:v1
+        -- docker logs backend #we see error 
+            "error": mysql_address not found
+            "issue": -- when docker uses default network
+                    -- containers cannot communicate with default network
+            "solution": we need to create a own network to communicate with containers
+    }
+    creating expense network:
+    -------------------------
+    --> when ever docker is installed
+        -- "docker" creates a "default-Network" (docker0)
+        --  If there isn't need of network in containers we can use "default-network"
+        -- If communication in needed ,own network has to be created
+
+    {  
+        -- docker network --help
+        -- docker network create expense 
+        -- docker network ls  # espense network is avaliable
+        -- if config # we can see the expense bridge network
+        -- docker ps
+        -- docker network ls # mysql is with default network
+        -- docker network expense # conneted expense network to mysql
+        # docker network <network-name> <container-name>
+        -- docker inspect mysql
+        -- docker network disconnect bridge mysql # mysql is connected to both expense and default bridge networks
+        -- docker inspect mysql
+        -- docker network expense mysql
+        -- docker ps -a 
+        -- docker rm backend
+        -- docker run -d --network expense --name backend backens:v1
+        -- docker ps # we mysql & backend container list
+        -- docker logs backend
+        "msg" : "app started on port 8080"
+        -- docker exec -it backend bash 
+        -- telnet # no cmd dependecies 
+        
+        Installing telnet:
+        ------------------
+        -- cat etc/*release #check the os to install telnet
+        "search for install telnet in docker debian"
+        -- apt install telnet
+        -- apt update
+        -- telnet 
+        "once connection is checked,telnet can be removed"
+        -- apt remove telnet -yet
+
+    }
+    --> mysqk&backend are 
+==================== 
+Frontend container : 
+====================
+    {
+    -- create "frontend" folder in "expense-docker"
+    -- Download code from "https://expense-builds.s3.us-east-1.amazonaws.com/expense-frontend-v2.zip" # ref expense doc:Download the frontend content      
+    -- unzip "expense-frontend-v2.zip"
+    -- copy the content to "frontend" folder in "expense-docker"
+    -- create "code" folder in "frontend" and copy all external files to "code" 
+    -- create "Dockerfile" in frontend folder
+    -- write a code refering to expense doc.
+    -- Dockerfile
+        FROM nginx
+        COPY /usr/share/nginx/html
+    --  
+    
+    
+    }
+
+{
 MySQL
 --------------
 1. I take one base OS like almalinux:9
@@ -20,3 +303,9 @@ Backend
 -------------
 
 docker containers can't be communicated using default network. You have to create your own network.
+
+https://expense-builds.s3.us-east-1.amazonaws.com/expense-backend-v2.zip
+
+}
+
+

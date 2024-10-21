@@ -17,7 +17,7 @@ References:
 ----------
 Note-link: https://vijaycodes.hashnode.dev/expense-project-using-terraform
 for-code : https://github.com/daws-81s/terraform-aws-security-group.git
-         : https://github.com/daws-81s/expense-terraform.git
+         : https://github.com/daws-81s/expense-terraform-dev.git
 
 
 {

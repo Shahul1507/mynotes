@@ -10,12 +10,12 @@
                                                  -- FROM
                                                  -- RUN
                                                  -- CMD
-                                                 -- CMD vs ENV
+                                                 -- (CMD vs ENV)
                                                  -- LABEL
                                                  -- EXPOSE
                                                  -- ADD
                                                  -- COPY
-                                                 -- ADD vs COPY
+                                                 -- (ADD vs COPY)
 References: {
 ----------
 										

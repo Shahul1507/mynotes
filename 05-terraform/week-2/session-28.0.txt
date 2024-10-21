@@ -114,7 +114,85 @@ VPC -->(Virtual private cloud)
 
 }
 
+{Manual VPC creation steps:
+ ----------------------------- 
+  
+1. create VPC with 
 
+    ---Name tag - optional  (expense_vpc)
+    ---ipv4/CIDR ---> 10.0.0.0/16
+     
+2. creating subnets with
+
+
+     for expense-public-subnet
+
+    --VPC id - (expense_vpc) dropdown selection
+    --Subnet name - (expense-public-subnet)
+    -- Availability Zone - (us-east-1)
+    --IPv4 subnet CIDR block - (10.0.1.0/24)
+
+     for expense-private-subnet
+
+     --VPC id - (expense_vpc) dropdown selection
+    --Subnet name - (expense-private-subnet)
+    -- Availability Zone - (us-east-1)
+    --IPv4 subnet CIDR block - (10.0.2.0/24)
+
+
+      for expense-database-subnet
+
+     --VPC id - (expense_vpc) dropdown selection
+    --Subnet name - (expense-database-subnet)
+    -- Availability Zone - (us-east-1)
+    --IPv4 subnet CIDR block - (10.0.3.0/24)
+
+3.create Internet gateway
+
+   -- Name tag -(expense-Internetgateway) --> create
+   -- popup-Attach vpc --> select (expense_vpc)
+
+4. create route table 
+
+      for expense-public-route
+    -- Name - optional -(expense-public-route)
+    -- select VPC -- (expense-vpc) dropdown
+
+   after creation click on edit routes --> search icon 0.0.0.0/0 --> Internet Gateway --> select (expense-Internetgateway)
+   Navigate to subnet associations tab --> edit subnet associations --> select  check box -expense-public-subnet --> save associations
+
+   for expense-private-route
+    -- Name - optional -(expense-private-route)
+    -- select VPC -- (expense-vpc) dropdown
+
+  Navigate to subnet associations tab --> edit subnet associations --> select  check box -expense-private-subnet --> save associations
+
+     for expense-database-route
+    -- Name - optional -(expense-private-route)
+    -- select VPC -- (expense-vpc) dropdown
+
+  Navigate to subnet associations tab --> edit subnet associations --> select  check box -expense-database-subnet --> save associations 
+
+
+5. creating Elastic Ip
+   
+   --> Allocate  elastic ip  --> allocate
+
+6. Create nat gateway 
+
+   -- Name - optional - (expense-project)
+   -- Subnet -- (expense-public-subnet)
+   -- Elastic IP allocation ID --( select created  Elastic ip) --> Create NAT gateway
+
+7. connection establishment b/w NAT and private and database
+  
+   Navigate to route tables--> 
+
+      -select Private route table --> edit routes --> search icon 0.0.0.0/0 --> NAT gateway --> select NAT ID --> Save changes
+
+      -select database route table --> edit routes --> search icon 0.0.0.0/0 --> NAT gateway --> select NAT ID --> Save changes
+
+}
 
 
 {business is restaurant orders
