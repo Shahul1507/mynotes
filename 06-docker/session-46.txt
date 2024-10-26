@@ -1,0 +1,285 @@
+                                            ----------
+                                            | DOCKER |  
+                                            ----------
+                                               DAY-5
+                                            -------------		
+                                            |  CONTENT  | 
+                                            -------------
+                                      ---> Docker Networking
+                                            -- host network
+                                            -- bridge network
+                                            -- overlay network
+                                      ---> Docker volume
+                                            -- unnamed volume
+                                            -- named volume  
+                                      ---> Docker compose   
+                                      
+--> Docker dir -- (/var/lib/docker)
+
+==================
+DOCKER NETWORKING :
+==================
+
+1. host network
+2. bridge network --> default
+3. overlay network --> Between multiple docker hosts
+{
+      -------------
+      Host network:
+      -------------
+            1. contianers using host n/w will not get IP address.
+            2. It means containers are sharing host IP address.
+            3. containers open host port.
+                  -- containers get same IP as Host_IP with host ports 
+                        -- mysql --> 3306 --> host port
+                        -- backend --> 8080 --> host port
+                        -- frontend --> 80 --> host port
+
+      --> Creating "Expense-project" with "host-network"
+            ---------------------------------------------
+            1.Install docker
+            {
+                  -- login to server 
+                  -- sudo su- (root access)
+                  -- vim install-docker.sh
+                  -- insert (press i) content from "install-docker.sh" to "vim editer" 
+                  -- press "esc" and press (:)
+                  -- type "wq:"
+                  -- "sh install-docker.sh"
+            }
+            2.Re-size disk (proper partition) 
+            {
+                  -- check disk memory : "df -hT"
+                  -- take root access : "sudo su -"
+                  -- we have added the storage ,yet we need to partition as per our requirement
+                  -- follow "resize-disk.md" to do the partition
+                  -- lsblk
+                  -- sudo growpart /dev/xvda 4 ("xvda" is partition name : "4" is partition number)
+                  -- sudo lvextend -l +50%FREE /dev/RootVG/rootVol
+                  -- sudo lvextend -l +50%FREE /dev/RootVG/varVol
+                  -- sudo xfs_growfs /
+                  -- sudo xfs_growfs /var
+                  -- check disk memory now: "df -hT"
+                  -- exit from root access: "exit"
+            }
+            3.creating containers for expense-project
+
+            {   --> MySQL -- (creating mysql container)
+                  
+                        -- docker build -t mysql:v1 .
+                        -- docker network ls
+                        -- docker run -d --name mysql --network host mysql:v1
+                        -- netstat -lntp
+                        -- docker ps
+                        -- sudo netstat -lntp  #3306 port
+                        -- docker inspect mysql # no ip is allocated
+            }
+            {   --> Backend -- (creating backend container)
+                  
+                        -- change "Dockerfile" (ENV DB_HOST="mysql") to (ENV DB_HOST="localhost")
+                        -- git push & git pull
+                        -- cd ../backend
+                        -- docker build -t backend:v1 .
+                        -- docker run -d --name backend --network host backend:v1
+                        -- docker ps   #containers are running
+                        -- docker logs backend # "msg": "app started on port 8080 "
+            }
+            {   --> Frontend -- (creating Frontend container)
+                  
+                        -- change "nginx.conf" 
+                        (
+                              location /api/ { 
+                              proxy_pass http://backend:8080/;
+                              }
+                        ) 
+                              to 
+                        (
+                              location /api/ { 
+                              proxy_pass http://localhost:8080/;
+                              }
+                        )
+                        -- git push & git pull
+                        -- cd ../frontend
+                        -- docker build -t frontend:v1 .
+                        -- docker run -d --name frontend --network host frontend:v1
+                        -- docker ps   #containers are running
+                        -- sudo netstat -lntp 
+                        -- check public_ip in browser # expense app running
+                        -- docker rm -f 'docker ps -a -q'   
+            }
+
+            Dis-advantages:
+            ---------------
+            --> No isolated network in "host-network" i.e., no security
+            --> because in host-network - we have all post ports
+            
+      --------------
+      Bridge network:
+      --------------    
+            
+      --> Creating "Expense-project" with "bridge-network" (for an Isolated-network)
+            ----------------------------------------------- 
+            1. creating docker network
+            -----------------------
+            -- docker network create expense  # "expense" is docker network name 
+            -- docker network ls # we see the docker network list
+
+            2. creating containers for expense-project
+            ---------------------------------------
+            
+            {   --> MySQL -- (creating mysql container)
+                  
+                        -- docker build -t mysql:v1 .
+                        -- docker network ls
+                        -- docker run -d --name mysql --network expense mysql:v1
+                        -- docker ps
+                        -- docker inspect mysql # we see ip is allocated
+            }
+            {   --> Backend -- (creating backend container)
+                  
+                        -- change "Dockerfile" (ENV DB_HOST="localhost") to (ENV DB_HOST="mysql")
+                        -- git push & git pull
+                        -- cd ../backend
+                        -- docker build -t backend:v1 .
+                        -- docker run -d --name backend --network expense backend:v1
+                        -- docker ps   #containers are running
+                        -- docker logs backend # "msg": "app started on port 8080 "
+            }
+            {   --> Frontend -- (creating Frontend container)
+                  
+                        -- change "nginx.conf" 
+                        (
+                              location /api/ { 
+                              proxy_pass http://localhost:8080/;
+                              }
+                        ) 
+                              to 
+                        (
+                              location /api/ { 
+                              proxy_pass http://backend:8080/;
+                              }
+                        )
+                        -- git push & git pull
+                        -- cd ../frontend
+                        -- docker build -t frontend:v1 .
+                        -- docker run -d --name frontend --network expense frontend:v1
+                        -- docker ps   #containers are running
+                        -- check public_ip in browser # expense app running
+                        -- docker rm -f 'docker ps -a -q'   
+            }
+
+      ----------------
+      Over-lay network:
+      ----------------
+
+      --> overlay network : Connecting "two containers" in different "hosts" using modem between "two-hosts"
+      --> keeping multiple docker is risky -- we need some orchestration.
+}
+================
+DOCKER VOLUMES :
+================
+{
+      --> containers are "ephemeral"(temparory). 
+      --> Once you remove container:
+      -- data is lost. 
+      -- data is not persisted by default. 
+      # In any project we have "Database"
+            # -- i.e., mysql data will be lost after every restart
+      # we need a mechanism to "store" the data and "retrieve" even after containers are removed
+            # (to do this we use "Docker Volumes")  
+
+      (There are two types of Docker volumes ): 
+      ---------------------------------------      
+      1. un-named volumes
+      2. named volumes
+
+      ------------------
+      Un-named volumes :
+      ------------------
+      {(Example):
+            -->(creating container)
+            -- docker run -d -p 80:80 nginx
+            -- docker exec -it <container_id > bash
+                        Inside container
+                        # cd usr/share/nginx/html
+                        # ls -l (index.html is present)
+                        # echo "Hello Docker volumes" > hello.html
+            -- run public_ip/hello.html #in browser
+            --> (Now removing container )   
+            -- docker rm -f <container_id> 
+            
+            -->(If same conatiner is run again can we get the hello.html file?)
+            -- docker run -d -p 80:80 nginx # creating a container again
+            -- run public_ip/hello.html    # we see nginx page running but no hello.html 
+                  #no data is present 
+            ==================================================================================    
+            -->To persist the data : (mount the storage in host to the container )   
+
+            -- creating a directoty in "host" and mounting it to "container"  
+            -- we have a command:
+                  -- [-v <host-path>:<container-path>] 
+                        - v = volume
+            
+            (Example):
+                  --> (creating directory) # in home/ec2-user directory           
+                              -- cd /
+                              -- mkdir nginx-data 
+                              -- docker run -d -v /home/ec2-user/nginx-data:/usr/share/nginx/html -p 80:80 nginx
+                              -- docker exec -it <container_id > bash
+                                    Inside container
+                                    # cd usr/share/nginx/html
+                                    # echo "Hello Docker volumes" > hello.html
+                                    # exit
+                              -- run public_ip/hello.html #in browser       
+                  --> (Now removing container )
+                              -- docker rm -f <container_id> 
+                  -->(If same conatiner is run again)
+                              -- docker run -d -v /home/ec2-user/nginx-data:/usr/share/nginx/html -p 80:80 nginx
+                              -- docker exec -it <container_id > bash
+                                    Inside container
+                                    # cd nginx-data
+                                    # echo "<h1>This is from host-storage</h1>" > volume.html
+                              -- run public_ip/volume.html 
+                              -- run public_ip/hello.html     
+                        (we can persist the data as mentioned above is called "unnamed volume")
+                              -- docker inspect <container_id> #it stores the data somewhere
+      }
+      --------------
+      Named volumes
+      --------------
+      {
+      --> "Named" volumes can be managed using - docker commands
+      --> "un-named" volumes cannot be managed using -docker commands
+      --> we use docker commands to manage life-cycle (create,delete,update) of the volumes
+
+      -- docker volume --help # same as docker network
+      -- docker volume ls  # shows the list of volumes
+      -- docker volume create nginx-html # we see the file details
+      (creating container mapping to Named volume)
+
+      -- docker run -d -v nginx-html:/usr/share/nginx/html -p 80:80 nginx
+      -- docker ps
+      -- docker rm -f <container_Id>
+      -- docker volume ls #we see volume (nginx-html) file still present
+      -- docker network remove expense
+
+      }
+
+}
+
+================
+DOCKER COMPOSE :
+================
+Docker compose is a tool for defining and running multi-container applications.
+
+Advantages:
+-----------
+--> can manage the services with dependecies
+--> manage all the services at a time with single command 
+expense
+---------------
+create network
+create volume
+mysql
+backend
+frontend

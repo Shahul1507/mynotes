@@ -110,7 +110,7 @@ MySQL Container:
     creating-mysql-container:
     -------------------------
     {
-        -- git clone "expense-docker" repo to (mobaxterm) server
+        -- git clone "https://github.com/Shahul1507/expense-docker.git" repo to (mobaxterm) server
         -- cd expense-docker
         -- cd mysql & cat Dockerfile
         -- docker build -t mysql:v1 .
@@ -181,9 +181,50 @@ Docker network:
         -- docker ps
         -- docker inspect mysql
         {
-
+            "NetworkSettings": {
+                "Bridge": "",
+                "SandboxID": "86e9bcf6cc12dc77cb432750b74216bc5fde3d4a762b773acb7c12d8c98e0705",
+                "SandboxKey": "/var/run/docker/netns/86e9bcf6cc12",
+                "Ports": {
+                    "3306/tcp": null,
+                    "33060/tcp": null
+                },
+                "HairpinMode": false,
+                "LinkLocalIPv6Address": "",
+                "LinkLocalIPv6PrefixLen": 0,
+                "SecondaryIPAddresses": null,
+                "SecondaryIPv6Addresses": null,
+                "EndpointID": "b6e2727df4bc51109a9478f220281767d8bbf8c134d0a1287263d813e350ddcf",
+                "Gateway": "172.17.0.1",
+                "GlobalIPv6Address": "",
+                "GlobalIPv6PrefixLen": 0,
+                "IPAddress": "172.17.0.2",
+                "IPPrefixLen": 16,
+                "IPv6Gateway": "",
+                "MacAddress": "02:42:ac:11:00:02",
+                "Networks": {
+                    "bridge": {
+                        "IPAMConfig": null,
+                        "Links": null,
+                        "Aliases": null,
+                        "MacAddress": "02:42:ac:11:00:02",
+                        "DriverOpts": null,
+                        "NetworkID": "c04871afd57b888da723d2e658e4474a1d3a818e6e1a4a8ea91b6c525de2f9bd",
+                        "EndpointID": "b6e2727df4bc51109a9478f220281767d8bbf8c134d0a1287263d813e350ddcf",
+                        "Gateway": "172.17.0.1",
+                        "IPAddress": "172.17.0.2",
+                        "IPPrefixLen": 16,
+                        "IPv6Gateway": "",
+                        "GlobalIPv6Address": "",
+                        "GlobalIPv6PrefixLen": 0,
+                        "DNSNames": null
+                    }
+                }
+            }
+    
         }
-    }
+    }    
+
 ===================
 Backend container : 
 ===================
@@ -222,24 +263,25 @@ Backend container :
     }
     creating expense network:
     -------------------------
+    {
     --> when ever docker is installed
         -- "docker" creates a "default-Network" (docker0)
         --  If there isn't need of network in containers we can use "default-network"
         -- If communication in needed ,own network has to be created
 
-    {  
+     
         -- docker network --help
         -- docker network create expense 
         -- docker network ls  # espense network is avaliable
-        -- if config # we can see the expense bridge network
+        -- ifconfig # we can see the expense bridge network
         -- docker ps
         -- docker network ls # mysql is with default network
-        -- docker network expense # conneted expense network to mysql
+        -- docker network connect expense mysql # conneted expense network to mysql
         # docker network <network-name> <container-name>
         -- docker inspect mysql
         -- docker network disconnect bridge mysql # mysql is connected to both expense and default bridge networks
         -- docker inspect mysql
-        -- docker network expense mysql
+        -- docker network connect expense mysql
         -- docker ps -a 
         -- docker rm backend
         -- docker run -d --network expense --name backend backens:v1
@@ -255,12 +297,12 @@ Backend container :
         "search for install telnet in docker debian"
         -- apt install telnet
         -- apt update
-        -- telnet 
+        -- telnet mysql 3306
         "once connection is checked,telnet can be removed"
         -- apt remove telnet -yet
 
     }
-    --> mysqk&backend are 
+    --> mysqk&backend are conneted
 ==================== 
 Frontend container : 
 ====================
@@ -274,11 +316,26 @@ Frontend container :
     -- write a code refering to expense doc.
     -- Dockerfile
         FROM nginx
-        COPY /usr/share/nginx/html
-    --  
-    
-    
+        COPY code /usr/share/nginx/html
+        RUN rm -rf /etc/nginx/nginx.conf
+        RUN rm -rf /etc/nginx/conf.d
+        COPY nginx.conf /etc/nginx/nginx.conf
+        COPY expense.conf /etc/nginx/default.d/expense.conf
     }
+    creating-frontend-container:
+    --------------------------
+    {
+    -- git pull "expense-docker" repo to (mobaxterm) server
+    -- cd ../frontend
+    -- docker build -t frontend:v1 .
+    -- docker images (check image is built)
+    -- docker run -d --p 80:80 --network expense --name frontend frontend:v1 
+    -- docker ps
+    -- run the public_ip:80 in browser # run the expense app
+    -- docker rm -f $(docker ps -a)
+    }
+
+    
 
 {
 MySQL

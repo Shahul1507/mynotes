@@ -16,7 +16,7 @@
 
 References: 
 ----------
-Note-link:  https://vijaycodes.hashnode.dev/dockers-overview
+Note-link : https://vijaycodes.hashnode.dev/dockers
 Note Link :(https://medium.com/@joindevops/why-containerization-is-popular-how-to-understand-the-advantages-55261a17517c)
 Note-Link: https://medium.com/@hareepalepu/understanding-docker-architecture-a-beginners-guide-1c0161e7aa22
 

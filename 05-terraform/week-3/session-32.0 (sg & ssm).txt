@@ -207,7 +207,7 @@ This error can be handeled by using "ssm-parameters" store in "aws"
 2- (retreving): By pulling "vpc_id" value from "ssm-parameters" store to "sg-module"
     
 {storing: 
--------
+--------
 -- using "VPC module" we will push to store the "vpc_id"-(/expense/dev/vpc_id) in SSM.
 -- search for ssm parameters in browser
 -- https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ssm_parameter
