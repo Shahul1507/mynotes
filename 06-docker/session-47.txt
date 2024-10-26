@@ -11,6 +11,7 @@
                                                 -- Multi stage builds
                                             ---> Docker layers
                                             ---> Docker architecture  
+                                            ---> Docker Swarn
 
 ======================
 DOCKER BEST PRACTICES
@@ -97,3 +98,25 @@ docker run -d -p 80:80 nginx
 docker daemon checkes whethe image exist local or not, if exist it will run
 if not exist, it will pull registry/hub, create a container out of it, run it and send the output to the client
 
+Docker swarn:
+-------------
+Docker Swarm, while a powerful orchestration tool, has several limitations compared to alternatives like Kubernetes. Here are some key disadvantages:
+1. Limited Features for Large-Scale Orchestration
+Docker Swarm lacks the advanced features required for managing large-scale, complex deployments. It offers basic orchestration functionalities but lacks depth in areas such as autoscaling, which Kubernetes natively supports through Horizontal Pod Autoscaling (HPA).
+2. Less Community Support and Fewer Integrations
+Kubernetes has a large and active community, 
+leading to frequent updates, better resources, and more integrations with third-party tools. 
+Docker Swarm’s smaller community results in fewer integrations with monitoring, logging, and alerting tools, which are crucial for enterprise-level applications.
+3. Basic Load Balancing and Networking Limitations
+Docker Swarm’s built-in load balancing is less sophisticated than Kubernetes. For instance, it struggles with managing network policies, particularly in complex setups requiring custom routing or layer 7 (application-level) load balancing.
+4. Lower Security and Compliance Features
+While Docker Swarm supports TLS for communication between nodes, it lacks the advanced security and compliance features of Kubernetes, such as role-based access control (RBAC) and secrets management, making it less suitable for highly secure environments.
+5. Lacks Robust Monitoring and Logging Options
+Swarm has limited native options for logging and monitoring, requiring additional setup for tools like Prometheus or Grafana. Kubernetes, in contrast, has an ecosystem with built-in options and a range of third-party integrations for observability.
+6. Slower Development and Feature Release Cycle
+With Docker’s focus shifting towards Kubernetes, Swarm’s development has slowed. This results in fewer updates and new features, reducing Swarm’s ability to adapt to evolving industry needs.
+7. Less Support for Stateful Applications
+Docker Swarm is primarily designed for stateless applications. It lacks support for persistent volumes and advanced storage solutions, making it challenging to manage stateful applications requiring persistent storage across nodes.
+8. Inflexibility with Persistent Storage Solutions
+Docker Swarm’s storage system is not as flexible as Kubernetes’s Persistent Volumes (PV) and Persistent Volume Claims (PVC), making it harder to manage data storage consistently and reliably across nodes in a cluster.
+Despite its ease of setup and simplicity, Docker Swarm is more suited for smaller, simpler deployments and falls short in the features required for robust production-grade deployments. Kubernetes, while more complex, offers a far more flexible and scalable orchestration solution.

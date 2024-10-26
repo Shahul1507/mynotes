@@ -7,7 +7,7 @@
                                         -------------
                                  ---> Need for Kubernetes
                                  ---> Installation using eksctl
-                                 ---> Resources
+                                 ---> K8-Resources
                                       -- namespaces
                                       -- pods 
 
@@ -24,22 +24,18 @@ all the related mysql directories we should give permissions to this group and u
 /var/run/mysqld
 /docker-entrypoint-initdb.d
 
-disadvantages
----------------
-1 PG 50 rooms...
-no water for 5 days
-
-another 5 PG. either he get water from there or he shift persons to another PG
-
-there is no relibility since there is only one docker host...
-there is no autoscaling
-there is no load balancing
-volumes are inside docker host..poor volume management
-security. no secret management
-no communication between containers in another host.. network management is not good
+disadvantages of docker 
+------------------------
+  -- (there is no relibility) since there is only one docker host...
+  -- (there is no autoscaling)
+  -- (there is no load balancing)
+  -- (volumes are inside docker host)..poor volume management
+  -- (security. no secret management)
+  -- (no communication between containers in another host.. network management is not good)
 
 --> Because of the disadvantages in docker 
-   -- we have "orchestration"
+   -- we have "orchestration" in "Kubernetes"
+--------------   
 orchestration
 --------------
 --> (In Docker) -- we have "Docker swarn" for (orchestration) but its poor 
@@ -49,97 +45,126 @@ orchestration
 kubernetes Install 
 -------------------
 --> we need;
+   
    -- (kubectl) --> k8 client command
    -- (eksctl) --> command to create, update and delete cluster. managing cluster
 
-STEPS:
------   
-1.Docker Install
------------------
-    --> create instance (workstation) with 50gb volume --> (configure storage)
-    --> Install docker in the server (install-docker.sh)
-        {
-            -- login to server 
-            -- curl https://raw.githubusercontent.com/Shahul1507/expense-docker/refs/heads/main/install-docker.sh | sudo bash
-        }
-    --> re-size the disk (proper partition) 
-        {
-        
-            -- we have added the storage ,yet we need to partition as per our requirement
-            -- follow "resize-disk.md" to do the partition
-               -- lsblk
-               -- sudo growpart /dev/nvme0n1 4 
-               -- sudo lvextend -l +50%FREE /dev/RootVG/rootVol
-               -- sudo lvextend -l +50%FREE /dev/RootVG/varVol
-               -- sudo xfs_growfs /
-               -- sudo xfs_growfs /var
-            -- check disk memory now: "df -hT"
-            -- exit from root access: "exit"
-        }
+  STEPS:
+  -----   
+  1.Docker Install
+  -----------------
+  {
+      --> create instance (workstation) with 50gb volume --> (configure storage)
+      --> Install docker in the server (install-docker.sh)
+          {
+              -- login to server 
+              -- curl https://raw.githubusercontent.com/Shahul1507/expense-docker/refs/heads/main/install-docker.sh | sudo bash
+          }
+      --> re-size the disk (proper partition) 
+          {
+          
+              -- we have added the storage ,yet we need to partition as per our requirement
+              -- follow "resize-disk.md" to do the partition
+                -- lsblk
+                -- sudo growpart /dev/nvme0n1 4 
+                -- sudo lvextend -l +50%FREE /dev/RootVG/rootVol
+                -- sudo lvextend -l +50%FREE /dev/RootVG/varVol
+                -- sudo xfs_growfs /
+                -- sudo xfs_growfs /var
+              -- check disk memory now: "df -hT"
+              -- exit from root access: "exit"
+          }
+  }
+  2.Install kubectl
+  -----------------
+  {
+      --> open-link : https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html#linux_amd64_kubectl
+      --> check -- Linux (amd64)
+      --> curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.31.0/2024-09-12/bin/linux/amd64/kubectl
+      --> chmod +x ./kubectl
+      --> sudo mv kubectl /usr/local/bin/kubectl
+      --> kubectl version
+  }
 
-2.Install kubectl
------------------
-    --> open-link : https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html#linux_amd64_kubectl
-    --> check -- Linux (amd64)
-    --> curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.31.0/2024-09-12/bin/linux/amd64/kubectl
-    --> chmod +x ./kubectl
-    --> sudo mv kubectl /usr/local/bin/kubectl
-    --> kubectl version
+  3.Install eksctl
+  ---------------- 
+  {
+      --> open-link: https://eksctl.io/installation/
+      --> check -- For unix
+      # for ARM systems, set ARCH to: `arm64`, `armv6` or `armv7`
+      --> ARCH=amd64
+      --> PLATFORM=$(uname -s)_$ARCH
+      --> curl -sLO "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_$PLATFORM.tar.gz"
+      # (Optional) Verify checksum
+      #curl -sL "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_checksums.txt" | grep $PLATFORM | sha256sum --check
+      --> tar -xzf eksctl_$PLATFORM.tar.gz -C /tmp && rm eksctl_$PLATFORM.tar.gz
+      --> sudo mv /tmp/eksctl /usr/local/bin
+      --> eksctl version
+  }
+  4.run aws configure
+  ---------------------
+  {
+      --> aws configure
+      --> provide "AWS Access Key ID"
+      --> provide "AWS Secret Access Key"
+      --> provide "Default region name"
+      --> press "enter"
+  }
 
+Creating a cluster : (using config-file)
+--------------------
+{
+  -- Ref: https://eksctl.io/getting-started/
+  -- Ref: https://eksctl.io/usage/spot-instances/
+  -- create a folder "k8-eksctl" in local
+  -- create a file "eks.yaml" in "k8-eksctl"
+  -- copy the "config-file" to "eks.yaml" 
+  -- modify as per our requirement
+      --> eks.yaml
+         ------------ 
+          apiVersion: eksctl.io/v1alpha5
+          kind: ClusterConfig
 
-3.Install eksctl
----------------- 
-    --> open-link: https://eksctl.io/installation/
-    --> check -- For unix
-    # for ARM systems, set ARCH to: `arm64`, `armv6` or `armv7`
-    --> ARCH=amd64
-    --> PLATFORM=$(uname -s)_$ARCH
-    --> curl -sLO "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_$PLATFORM.tar.gz"
-    # (Optional) Verify checksum
-    #curl -sL "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_checksums.txt" | grep $PLATFORM | sha256sum --check
-    --> tar -xzf eksctl_$PLATFORM.tar.gz -C /tmp && rm eksctl_$PLATFORM.tar.gz
-    --> sudo mv /tmp/eksctl /usr/local/bin
-    --> eksctl version
+          metadata:
+            name: expense-1
+            region: us-east-1
 
-4.run aws configure
----------------------
-    --> aws configure
-    --> provide "AWS Access Key ID"
-    --> provide "AWS Secret Access Key"
-    --> provide "Default region name"
-    --> press "enter"
+          managedNodeGroups:
+            - name: expense
+              instanceType: m5.large
+              desiredCapacity: 3
+              spot: true   #reg link : https://eksctl.io/usage/spot-instances/ 
 
+  -- cd k8-ekctl            
+  -- git init  
+  -- git branch -M main    
+  -- git remote add origin https://github.com/Shahul1507/k8-ekctl.git   
+  -- git add . ; git commit -m "k8"; git push origin main
+  -- git clone https://github.com/Shahul1507/k8-ekctl.git  (in workstation server)
+  -- cd k8-eksctl
+  -- ls -l
+  -- cat eks-yaml
+  -- eksctl create cluster --config-file=eks.yaml
+  -- kubectl get nodes  #nodes list is displayed
 
-    
-apiVersion: eksctl.io/v1alpha5
-kind: ClusterConfig
+check:
+------
+-- aws --> cloudformation --> stacks
+-- aws --> EKS --> clusters --> "expense-1"
+-- aws --> EC2 -->  instances --> "3 nodes will be created"
 
-metadata:
-  name: expense-1
-  region: us-east-1
-
-managedNodeGroups:
-  - name: ng-1
-    instanceType: m5.large
-    desiredCapacity: 10
-	spot: true
-	
-eksctl create cluster --config-file=eks.yaml
+}
 
 	
 spot instances
 ------------------
 AWS have huge data center. there may be unused capacity in data center
-
 spot instances --> 90% discount. when AWS requires capacity to ondemand clients they take back instances with 2min notice...
 
 
-kubectl get nodes --> how many nodes are there in cluster
-
-
-===========
-Resources
-===========
+============
+K8-Resources
+============
 
 --> namespace -- (just like VPC, you will have a dedicated isolated project to create your workloads/resources)
     ----------
@@ -173,6 +198,7 @@ Resources
     -- kubectl get namespaces (shows the list of namespaces)
 }
 ========================================================================================================
+--------------------------------------------------------------------------------------------------------
 ========================================================================================================    
 
   
@@ -207,7 +233,7 @@ Resources
       # curl localhost
       # exit
 }      
-===========================================================================================
+=========================================================================================================
 (MULTI-CONTAINER)
 -----------------
 {
@@ -245,43 +271,10 @@ Resources
            --  we see both containers are visible in same pod which are sharong identity and storage  
           
 }
-
-setup
-------
-assignment
--------------
-1. there is a docker host running
-2. no space left on device
-3. you need to add extra disk to the running instance
-4. make sure docker directory /var/lib/docker is mounted to new disk
-5. migrate existing data to new mount
-pod vs container
-------------------
-1. pod is the smallest deployable unit in kubernetes
-2. pod can contain one or many containers.
-3. containers in a pod can share same network identity and storage
-4. these are useful in sidecar and proxy patterns
+=========================================================================================================
 
 
-
-
-kubectl exec -it nginx -- bash
-
-pod-1 have nginx container is there
-pod-2 can have nginx container or not?
-
-pod-2
----------
-1. nginx
-2. nginx with name also nginx
-3. 
-
-CrashLoopBackOff
------------------
-container is not able to start
-
-
-Interview:
+Interview:d
 ----------
 Q)  pod vs container ?    
 A)  1. pod is the smallest deployable unit in kubernetes
@@ -295,5 +288,10 @@ A) By using cmd [kubectl exec -it <pod-name> -- bash]
 Q) what is "crash loop backoff"?
 A) When a container is not able to start ,we get the status of "crashLoopBackOff"
    K8s automatically runs the containers putting to status "RunContainerError"
+
+   -- two pods cannot have same name 
+   -- two containers with same name cannot be in a container
+   -- containers share same network identity and storage inside a pod 
+
 
 
