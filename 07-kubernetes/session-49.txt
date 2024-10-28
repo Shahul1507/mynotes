@@ -499,6 +499,8 @@ SERVICES | -- (https://kubernetes.io/docs/concepts/services-networking/service/)
     -- kubectl get services
     -- kubectl get pods -o wide
     -- kubectl get pods -n kube-system
+    -- cd ../eksctl
+    -- eksctl delete cluster --config-file=eks.yaml
     
     
 }
