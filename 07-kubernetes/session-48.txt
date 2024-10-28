@@ -126,7 +126,7 @@ Creating a cluster : (using config-file)
           kind: ClusterConfig
 
           metadata:
-            name: expense-1
+            name: expense
             region: us-east-1
 
           managedNodeGroups:
@@ -166,7 +166,7 @@ spot instances --> 90% discount. when AWS requires capacity to ondemand clients 
 K8-Resources
 ============
 
---> namespace -- (just like VPC, you will have a dedicated isolated project to create your workloads/resources)
+--> namespace -- (Namespaces in Kubernetes provide a way to organize and isolate resources within a cluster.)
     ----------
 {    
     -- create a folder "k8-resources" in vs-code (local)
@@ -175,6 +175,7 @@ K8-Resources
     -- copy the namespace file in "01-namespace.yaml"
        --> 01-namespace.yaml
            ------------------
+           # general syntax
             apiVersion: v1
             kind: Namespace
             metadata:
@@ -196,6 +197,8 @@ K8-Resources
     -- ls -l 
     -- kubectl apply -f 01-namespace.yaml (namespace created)
     -- kubectl get namespaces (shows the list of namespaces)
+    -- kubectl delete -f 01-namespace.yaml
+
 }
 ========================================================================================================
 --------------------------------------------------------------------------------------------------------
@@ -227,11 +230,12 @@ K8-Resources
 
   (pulling to workstation)--Mobaxterm
    -- git pull
-   -- kubectl apply -f 02-pods.yaml (pod created)
+   -- kubectl apply -f 02-pod.yaml (pod created)
    -- kubectl get pods (shows the list of pods)
-   -- kubectl exec -it <pod-name> --bash (loging to running pod )
+   -- kubectl exec -it nginx -- bash (loging to running pod )
       # curl localhost
       # exit
+   -- kubectl delete -f 02-pod.yaml   
 }      
 =========================================================================================================
 (MULTI-CONTAINER)
@@ -250,7 +254,7 @@ K8-Resources
                containers:
                - name: nginx
                  image: nginx
-               - name: almalinux:9
+               - name: almalinux
                  image: almalinux:9
                  command: ["sleep","100"]
      (pushing to git-hub)
@@ -266,7 +270,7 @@ K8-Resources
       -- kubectl delete -f 03-multi-container.yaml 
       -- kubectl apply -f 03-multi-container.yaml
       -- kubectl get pods
-      -- kubectl exec -it multi-container -c --bash (-c - specific container) (loging to running pod )
+      -- kubectl exec -it multi-container -c almalinux -- bash (-c - specific container) (loging to running pod )
          # curl localhost
            --  we see both containers are visible in same pod which are sharong identity and storage  
           
@@ -274,7 +278,7 @@ K8-Resources
 =========================================================================================================
 
 
-Interview:d
+Interview:
 ----------
 Q)  pod vs container ?    
 A)  1. pod is the smallest deployable unit in kubernetes
@@ -293,5 +297,14 @@ A) When a container is not able to start ,we get the status of "crashLoopBackOff
    -- two containers with same name cannot be in a container
    -- containers share same network identity and storage inside a pod 
 
+COMMANDS:
+---------
+kubectl apply -f <pod-name>
+kubectl delete -f <pod-name>
+kubectl get pods
+kubectl exec -it nginx -- bash (loging to running pod )
+kubectl exec -it <pod-name> -c <container-name> -- bash (-c - specific container)
 
-
+cluster:
+-------
+eksctl create cluster --config-file=<file.yaml>

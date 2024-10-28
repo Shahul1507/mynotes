@@ -1,18 +1,523 @@
-kubectl describe pod <pod-name>
+                                                --------------
+                                                | KUBERNETES |  
+                                                --------------
+                                                    DAY-2
+                                                -------------		
+                                                |  CONTENT  | 
+                                                -------------
+                                                
+                                                ---> pods 
+                                                     -- Labels
+                                                     -- Annotations
+                                                     -- Env
+                                                     -- Resource limits and requests
+                                                     -- configmaps
+                                                     -- pod-config
+                                                     -- secret
+                                                     -- pod-secret
+                                                ---> services
+                                                     -- Cluster IP
+                                                     -- Node port
+                                                     -- Load balancer
+=====                                                          
+PODS:
+===== 
+{
+( LABELS ) 
+----------
+{
+   -- create a file "04.labels.yaml" in "k8-resources" in vs-code (local)
+   -- check the link (https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/)
+   -- copy the pod file in "04.labels.yaml"
+      --> 04-labels.yaml
+          ------------
+          apiVersion: v1
+          kind: Pod
+          metadata:
+            name: labels
+            labels:
+              project: expense
+              module: backend
+              environment: dev 
+          spec:
+            containers:
+            # equivalent to -- docker run -d --name nginx nginx
+            - name: nginx
+              image: nginx
 
-ENV in image defition vs env in manifest
-----------------------------------------
-env in Dockerfile should rebuild if you change
-env in manifest no need to rebuild, just restart is enough
+  (pushing to git-hub)
+   -- git add . ; git commit -m "k8-resources"; git push origin main
 
-resource utilisation
+  (pulling to workstation)--Mobaxterm
+   -- git clone https://github.com/Shahul1507/k8-resources.git
+   -- cd k8-resources 
+   -- kubectl apply -f 04-labels.yaml (pod created)
+   -- kubectl get pods (shows the list of pods)
+   -- kubectl describe pod labels (complete datails of a pod ) -- Syntax: (kubectl describe pod <pod-name>)
+ 
+}      
+
+( Annotations ) 
+---------------
+{
+   -- create a file "05-annotations.yaml" in "k8-resources" in vs-code (local)
+   -- check the link (https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)
+   -- copy the pod file in "05-annotations.yaml"
+      --> 05-annotations.yaml
+          ------------------
+          kind: Pod
+          apiVersion: v1
+          metadata:
+            name: annotations
+            annotations:
+              imageregistry: "https://hub.docker.com/"
+              buildURL: "https://jenkins.joindevops.com/expense/backend/build/67"
+          spec:
+            containers:
+            - name: nginx
+              image: nginx
+
+  (pushing to git-hub)
+   -- git add . ; git commit -m "k8-resources"; git push origin main
+
+  (pulling to workstation)--Mobaxterm
+   -- git pull
+   -- kubectl apply -f 05-annotations.yaml (pod created)
+   -- kubectl get pods (shows the list of pods running)
+   -- kubectl describe pod annotations (complete datails of a pod ) -- Syntax: (kubectl describe pod <pod-name>)
+ 
+}  
+
+( ENV ) -Environment variables
+------------------------------
+{
+   -- create a file "06-env.yaml" in "k8-resources" in vs-code (local)
+   -- check the link (https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/ )
+   -- copy the pod file in "06-env.yaml"
+      --> 06-env.yaml
+          ------------
+          kind: Pod
+          apiVersion: v1
+          metadata:
+            name: environment
+          spec:
+            containers:
+            - name: nginx
+              image: nginx
+              env:
+                - name: course
+                  value: devops
+                - name: trainer
+                  value: "sivakumar reddy"
+                - name: duration
+                  value: "120hr"
+  (pushing to git-hub)
+   -- git add . ; git commit -m "k8-resources"; git push origin main
+
+  (pulling to workstation)--Mobaxterm
+   -- git pull
+   -- kubectl apply -f 06-env.yaml (pod created)
+   -- kubectl get pods (shows the list of pods running)
+   -- kubectl exec -it environment -- bash (syntax: kubectl exec -it <pod-name> -- bash )
+        #env
+}  
+-----------------------
+Resource - utilisation |
 -----------------------
 if something goes wrong in loop, it will occupy entire host resources. We need to allocate resources to the container.
 1 cpu = 1000m cpu
 softlimit --> 100m cpu, 68Mi 
 hardlimit --> 120m cpu, 128Mi
 
-without touching the actual code, we need to change the value --> variables
+
+( Resource limits and requests ) 
+-------------------------------
+{
+   -- create a file "07-resource-limit.yaml" in "k8-resources" in vs-code (local)
+   -- check the link (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/ )
+   -- copy the pod file in "07-resource-limit.yaml"
+      --> 07-resource-limit.yaml
+          ------------
+            kind: Pod
+            apiVersion: v1
+            metadata:
+            name: limits
+            spec:
+            containers:
+            - name: nginx
+                image: nginx
+                resources:
+                requests:
+                    cpu: 100m
+                    memory: 68Mi
+                limits:
+                    cpu: 120m
+                    memory: 100Mi
+  (pushing to git-hub)
+   -- git add . ; git commit -m "k8-resources"; git push origin main
+
+  (pulling to workstation)--Mobaxterm
+   -- git pull
+   -- kubectl apply -f 07-resource-limit.yaml (pod created)
+   -- kubectl get pods (shows the list of pods running)
+   -- kubectl describe pod limits (complete datails of a pod ) -- Syntax: (kubectl describe pod <pod-name>)
+   
+} 
+
+------------
+config-maps |
+------------
+
+( config-maps ) -- Its like key value pairs
+----------------
+{
+   -- create a file "08-config-map.yaml" in "k8-resources" in vs-code (local)
+   -- check the link (https://kubernetes.io/docs/concepts/configuration/configmap/ )
+   -- copy the pod file in "08-config-map.yaml"
+      --> 08-config-map.yaml
+          ------------
+          apiversion: v1
+          kind: configMap
+          metadata:
+            name: nginx-config
+          data:
+            course: devops
+            duration: "120hrs"  
+
+  (pushing to git-hub)
+   -- git add . ; git commit -m "k8-resources"; git push origin main
+
+  (pulling to workstation)--Mobaxterm
+   -- git pull
+   -- kubectl apply -f 08-config-map.yaml 
+   -- kubectl get configmaps 
+   -- kubectl describe configmap nginx-config   (Syntax: kubectl describe congfigmap <configfile-name>)
+   
+}
+
+------------
+pod-config | -- configMap can be reffered as
+------------
+
+( pod-config ) -- "configMap" is reffered to "pod-config"
+--------------
+{
+   -- create a file "09-pod-config.yaml" in "k8-resources" in vs-code (local)
+   -- check the link (https://kubernetes.io/docs/concepts/configuration/configmap/ )
+   -- copy the pod file in "09-pod-config.yaml"
+      --> 09-pod-config.yaml
+          -----------------
+          {
+            kind: Pod
+            apiVersion: v1
+            metadata:
+            name: pod-config
+            spec:
+            containers:
+            - name: nginx
+                image: nginx
+                env:
+                - name: course
+                    valueFrom:
+                    configMapKeyRef:
+                        name: nginx-config # name of the config map you are referring to
+                        key: course # env.name and config map key name can be different
+                - name: duration
+                    valueFrom:
+                    configMapKeyRef:
+                        name: nginx-config
+                        key: duration
+          } 
+
+  (pushing to git-hub)
+   -- git add . ; git commit -m "k8-resources"; git push origin main
+
+  (pulling to workstation)--Mobaxterm
+   -- git pull
+   -- kubectl apply -f 09-pod-config.yaml
+   -- kubectl get pods
+   -- kubectl exec -it pod-config -- bash 
+       #env -- we see all variables
+  (changes in env-varibles) #without touching the pod-config
+   -- kubectl get configmap
+   -- kubectl edit configmap nginx-config
+      #file opens in vim-editor mode 
+      -- insert mode (press-i)
+      -- edit (duration : 130hrs)
+      -- :wg -(save it)  
+   (restart the pod to apply the changes)
+    -- kubectl get pods
+    -- kubectl delete pod-config
+    -- kubectl apply -f 09-pod-config.yaml
+    -- kubectl exec -it pod-config -- bash
+       #env -- we see the changes applied      
+   
+}
+
+(optimising "pod-config" by using "ENVFROM")
+ 
+{
+    --> 09-pod-config.yaml
+    -----------------
+    {
+        kind: Pod
+        apiVersion: v1
+        metadata:
+          name: pod-config
+        spec:
+          containers:
+          - name: nginx
+            image: nginx
+            envFrom:
+            - configMapRef:
+                name: nginx-config
+    } 
+
+    (pushing to git-hub)
+    -- git add . ; git commit -m "k8-resources"; git push origin main
+
+    (pulling to workstation)--Mobaxterm
+    -- git pull
+    -- kubectl get pods
+    -- kubectl delete pod-config
+    -- kubectl apply -f 09-pod-config.yaml
+    -- kubectl get pods
+    -- kubectl exec -it pod-config -- bash
+}
+
+----------
+secrets  |  
+----------
+( secrets ) -- (storing confidential data by encoding)
+-----------
+
+{
+   -- create a file "10.secret.yaml" in "k8-resources" in vs-code (local)
+   -- check the link (https://kubernetes.io/docs/concepts/configuration/secret/ )
+   -- copy the pod file in "10.secret.yaml"
+
+  (Encoding the date)
+   -- login to git bash
+   -- type username (echo "shahul" | base64)
+   -- we get (c2hhaHVsCg== )
+   -- type password ( echo "admin123" | base64)
+   -- we get (YWRtaW4xMjMK ) 
+
+      --> 10.secret.yaml
+          ------------
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: pod-secret
+          type: Opaque
+          data:
+            username: c2hhaHVsCg==
+            password: YWRtaW4xMjMK
+
+  (pushing to git-hub)
+   -- git add . ; git commit -m "k8-resources"; git push origin main
+
+  (pulling to workstation)--Mobaxterm
+   -- git pull
+   -- kubectl apply -f 10.secret.yaml 
+   -- kubectl get secrets 
+   -- kubectl describe secrets pod-secret   (Syntax: kubectl describe secrets <pod-name>)
+   
+}
+
+( pod-secret ) -- (providing secret data to pod)
+-----------
+
+{
+   -- create a file "11.pod-secret.yaml" in "k8-resources" in vs-code (local)
+   
+      --> 11.pod-secret.yaml
+          ------------------
+          kind: Pod
+          apiVersion: v1
+          metadata:
+            name: pod-secret
+          spec:
+            containers:
+            - name: nginx
+              image: nginx
+              envFrom:
+              - secretRef:
+                  name: pod-secret
+
+  (pushing to git-hub)
+   -- git add . ; git commit -m "k8-resources"; git push origin main
+
+  (pulling to workstation)--Mobaxterm
+   -- git pull
+   -- kubectl apply -f 11.pod-secret.yaml 
+   -- kubectl get pods
+   -- kubectl exec -it pod-secret -- bash
+      #env 
+      -- we see "username" & "password" is decoded
+      #exit
+
+  (decoding the data manually)
+    -- login to git bash
+    -- type username (echo "c2hhaHVsCg==" | base64 --decode)
+    -- we get (shahul )
+    -- type password ( echo "YWRtaW4xMjMK" | base64 --decode)
+    -- we get (admin123 )    
+
+}
+
+--> Encoding or decoding is not the safe way
+--> we use "secret-manager" or "ssm-parameter store" for secrets
+}
+
+--> To check pod to pod communication:
+    ----------------------------------
+    -- kubectl get pods
+    -- kubectl describe pod pod-secret
+       # check the IP_address
+       # copy the IP
+    -- kubectl exec -it annotations-- bash 
+       # curl <paste the IP>
+       -- we see pod to pod communication through IP  
+--> As POD_IP are temporary -- communication b/w pods gets complicated 
+--> To overcome this "Kubernetes" have "services" for pod to pod communication. 
+
+
+
+=========
+SERVICES | -- (https://kubernetes.io/docs/concepts/services-networking/service/)
+=========
+1. cluster IP --> default. only for internal pod to pod communication...
+2. node port
+3. load balancer
+
+( 1.cluster_IP ) -- (used  pod to pod communication internally)
+----------------
+ -- "services" select "pods" using "labels"
+ -- "labels" should be unique in details
+ -- a "service" can act as "DNS" to "pod" and "loadbalancer" as well
+
+{
+   -- create a file "12-service.yaml" in "k8-resources" in vs-code (local)
+   -- Ref link for code - (https://kubernetes.io/docs/concepts/services-networking/service/)
+   
+      --> 12-service.yaml
+          ------------------
+          kind: Service
+          apiVersion: v1
+          metadata:
+            name: nginx
+          spec:
+            selector:
+              project: expense
+              module: backend
+              environment: dev
+            ports:
+            - name: nginx-svc-port
+              protocol: TCP
+              port: 80 # service port
+              targetPort: 80 # container port
+  (pushing to git-hub)
+   -- git add . ; git commit -m "k8-resources"; git push origin main
+
+  (pulling to workstation)--Mobaxterm
+   -- git pull
+   -- kubectl apply -f 12-service.yaml 
+   -- kubectl get services
+   -- kubectl exec -it annotations -- bash
+      # curl nginx
+      # exit
+   -- kubectl describe service nginx   # we see endpoint pod IP_address
+}
+
+( 2.NodePort ) -- (to connect externally from Internet)
+----------------
+ -- we use "nodeport" to expose the "pod" to external world i.e.,Internet
+ -- open a port on node/host
+{
+    -- create a file "13-nodeport.yaml" in "k8-resources" in vs-code (local)
+    -- Ref link for code - (https://kubernetes.io/docs/concepts/services-networking/service/)
+    
+       --> 13-nodeport.yaml
+           ------------------
+            kind: Service
+            apiVersion: v1
+            metadata:
+            name: nginx-np
+            spec:
+            type: NodePort
+            selector:
+                project: expense
+                module: backend
+                environment: dev
+            ports:
+            - name: nginx-svc-port
+              protocol: TCP
+              port: 80 # service port
+              targetPort: 80 # container port
+    (pushing to git-hub)
+    -- git add . ; git commit -m "k8-resources"; git push origin main
+
+    (pulling to workstation)--Mobaxterm
+    -- git pull
+    -- kubectl apply -f 13-nodeport.yaml 
+    -- kubectl get services
+    -- kubectl get pods -o wide
+    
+}
+
+( 3.loadbalancer) -- (to connect externally from Internet)
+----------------
+{
+    -- create a file "14.load-balancer.yaml" in "k8-resources" in vs-code (local)
+    -- Ref link for code - (https://kubernetes.io/docs/concepts/services-networking/service/)
+    
+       --> 14.load-balancer.yaml
+           ------------------
+            kind: Service
+            apiVersion: v1
+            metadata:
+            name: nginx-lb
+            spec:
+            type: loadbalancer
+            selector:
+                project: expense
+                module: backend
+                environment: dev
+            ports:
+            - name: nginx-svc-port
+              protocol: TCP
+              port: 80 # service port
+              targetPort: 80 # container port
+
+    (pushing to git-hub)
+    -- git add . ; git commit -m "k8-resources"; git push origin main
+
+    (pulling to workstation)--Mobaxterm
+    -- git pull
+    -- kubectl apply -f 14.load-balancer.yaml 
+    -- kubectl get services
+    -- kubectl get pods -o wide
+    -- kubectl get pods -n kube-system
+    
+    
+}
+
+
+
+Interview:
+----------
+Q) Diff b/w (ENV) in image defition vs (ENV) in manifest
+
+A) -- env in Dockerfile should rebuild if you change
+   -- env in manifest no need to rebuild, just restart is enough
+
+Q) How can you access your pod in internet or outside?
+
+A) by exposing to services - because of IP's are temporery
+
+
+{                                             
 
 How can you access your pod in internet or outside?
 
@@ -35,5 +540,7 @@ labels
 ---------
 is single lable enough?
 
-narayana --> naaarayaaanaaaa
+
+}
+
 
