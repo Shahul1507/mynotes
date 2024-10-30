@@ -101,7 +101,17 @@ kubernetes Install
       --> sudo mv /tmp/eksctl /usr/local/bin
       --> eksctl version
   }
-  4.run aws configure
+
+  4.Install kubens
+  ----------------
+  {
+    --> open-link: (https://github.com/ahmetb/kubectx) 
+    --> run below 3 links: (under ec2-user)
+        -- sudo git clone https://github.com/ahmetb/kubectx /opt/kubectx
+        -- sudo ln -s /opt/kubectx/kubectx /usr/local/bin/kubectx
+        -- sudo ln -s /opt/kubectx/kubens /usr/local/bin/kubens   
+  }
+  5.run aws configure
   ---------------------
   {
       --> aws configure

@@ -1,0 +1,339 @@
+												--------------
+												| KUBERNETES |  
+												--------------
+													DAY-3
+												-------------		
+												|  CONTENT  | 
+												-------------
+												--> Sets
+													-- Replica set
+													-- Deployment
+												--> Expense Project using K8
+													-- MySQL
+													-- Backend
+													-- Debug
+													-- Frontend
+
+
+=======
+SETS :
+=======
+1.Replica-set
+2.Deployment-set 
+
+
+(1.Replica-set)  
+----------------
+   -- As far we have created only "sigle-pod"
+   -- If there is a requirement of "multi-pods" - we use --> (replica-sets)
+   -- It(replica-sets) makes sure desired number of pods running all the time.
+   -- we cannot select names to pod in "replica-sets" if there are multi-pods.
+
+   (Dis-advantages of Replica-set)
+   -- Replica-set will not update image-version when there is a change
+{   
+(creating "replica-set")
+
+	{
+	-- create a file "15-replicaset.yaml" in "k8-resources" in vs-code (local)
+	-- Ref link for code -- (https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/)
+				
+				15-replicaset.yaml
+				------------------
+				apiVersion: apps/v1
+				kind: ReplicaSet
+				metadata:
+				name: nginx
+				labels: # these are replicaset labels
+					app: nginx
+					tier: frontend
+				spec:
+				# modify replicas according to your case
+				replicas: 3
+				selector:
+					# these are used to select the pod to create replicas
+					matchLabels:
+					tier: frontend
+					app: nginx
+				# this is pod definition
+				template:
+					metadata:
+					# these labels belongs to pod
+					labels:
+						tier: frontend
+						app: nginx
+					spec:
+					containers:
+					- name: nginx
+					  image: nginx 
+
+	(pushing to git-hub)
+		-- git add . ; git commit -m "k8-resources"; git push origin main
+
+	(pulling to workstation)--Mobaxterm
+		-- git pull
+		-- kubectl apply -f 15-replicaset.yaml
+		-- kubectl get pods    # we see 3 pods with <nginx-randomcode> name 
+		-- kubectl get replicasets
+	(If any pod is deletd )
+		-- kubectl delete pod nginx-vpnn4
+		-- kubectl get pods 
+		# we see,
+		-- k8-automatically creates another pod & running in replica-set 
+		-- By any reason ,if any pod gets deleted in replica-set
+		-- Replica-set responsibility to create another and up-running	  	
+	}
+
+(connecting "replica-set" to "services") -- with same selecter-labels as "replica-set"
+
+	{
+	  -- adding servie-code to "15-replicaset.yaml"
+
+			15-replicaset.yaml
+			------------------
+			kind: Service
+			apiVersion: v1
+			metadata:
+			name: nginx
+			spec:
+			selector:             # same label from replica-set
+				tier: frontend
+				app: nginx
+			ports:
+			- name: nginx-svc-port
+				protocol: TCP
+				port: 80 # service port
+				targetPort: 80 # container port
+
+	(pushing to git-hub)
+	-- git add . ; git commit -m "k8-resources"; git push origin main
+
+	(pulling to workstation)--Mobaxterm
+		-- git pull
+		-- kubectl apply -f 15-replicaset.yaml
+		-- kubectl describe service nginx
+		   # we see all 3-pods IP load-balancing				
+	 		
+	}
+
+(Image-version update -- using "replica-set")
+
+	{
+	  -- changing Image-name in "15-replicaset.yaml"
+ 
+					spec:
+					containers:
+					- name: nginx
+					  image: nginx:stable-perl
+
+	(pushing to git-hub)
+		-- git add . ; git commit -m "k8-resources"; git push origin main
+
+	(pulling to workstation)--Mobaxterm
+		-- git pull
+		-- kubectl apply -f 15-replicaset.yaml
+		   # replicaset / nginx configured 
+		   # service /nginx unchanged
+        -- kubectl get pods 
+		   # we see pods are not updated 
+		-- kubectl delete -f 15-replicase.yaml   
+
+	}
+
+--> replica-set cannot update image-version
+--> replica-set responsibility is to maintain desired set of replicas	
+
+(Image-version update -- in pod )
+
+    {
+	  --> (Update "image: nginx" to "image: nginx:stable-perl")	in 02-pod.yaml 
+	  --> run "02-pod.yaml"
+		-- kubectl apply -f 02-pod.yaml 
+		   # pod/nginx configured
+		-- kubectl grt pods 
+		   # we see pod version is changed 
+		   # we see pod is restarted   
+	}
+
+--> Pods can update the image-version when its changed/updated 
+
+(As "replica-set" cannot update the image-version ) -- to overcome the we use "deployment"
+
+}
+
+(2-development-set)  
+-------------------
+
+	-- "deployment-set" creates "replica-set"
+	-- "replica-set" is the subset/part of deployement
+	-- Ex: In real-time when image is changed/updated , "deployment" make sure there is no down time
+	-- creates new pod & deletes old pod 
+
+{
+
+(creating "development-set")
+
+	{
+	-- create a file "16-deployment.yaml" in "k8-resources" in vs-code (local)
+	-- Ref link for code -- (https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)
+				
+				16-deployement.yaml
+				------------------
+				apiVersion: apps/v1
+				kind: deployment
+				metadata:
+				name: nginx
+				labels: # these are replicaset labels
+					app: nginx
+					tier: frontend
+				spec:
+				# modify replicas according to your case
+				replicas: 3
+				selector:
+					# these are used to select the pod to create replicas
+					matchLabels:
+					tier: frontend
+					app: nginx
+				# this is pod definition
+				template:
+					metadata:
+					# these labels belongs to pod
+					labels:
+						tier: frontend
+						app: nginx
+					spec:
+					containers:
+					- name: nginx
+					image: nginx 
+
+
+
+(connecting "deployment" to "services") -- with same selecter-labels as "deployment"
+
+	-- adding servie-code to "16-deployment.yaml"
+
+			16-deployment.yaml
+			------------------
+			kind: Service
+			apiVersion: v1
+			metadata:
+			name: nginx
+			spec:
+			selector:             # same label from deployment
+				tier: frontend
+				app: nginx
+			ports:
+			- name: nginx-svc-port
+				protocol: TCP
+				port: 80 # service port
+				targetPort: 80 # container port
+
+	(pushing to git-hub)
+	-- git add . ; git commit -m "k8-resources"; git push origin main
+
+	(pulling to workstation)--Mobaxterm
+		-- git pull
+		-- kubectl apply -f 16-deployment.yaml
+		-- kubectl get pods
+		-- kubectl get deployment
+		-- kubectl get replicaset
+					
+	}
+	-- "deployment-set" creates "replica-set"
+	-- "replica-set" is the subset/part of deployement
+
+(Image-version update -- using "deployment-set")
+
+	{
+	-- changing Image-name in "16-deployment.yaml"
+
+					spec:
+					containers:
+					- name: nginx
+					image: nginx:stable-perl
+
+	(pushing to git-hub)
+		-- git add . ; git commit -m "k8-resources"; git push origin main
+
+	(pulling to workstation)--Mobaxterm
+		-- git pull
+		-- kubectl apply -f 16-deployment.yaml
+		-- kubectl get pods 
+		# we see pods are updated 
+		-- kubectl get replicaset 
+		#replica-set updated  
+
+	}	
+
+--> "deployment" is done , "replicaset" is created & "replicaset" creates the "pods"
+--> When "Image-version" is updated 
+	-- deployment happens , which creates "replica-set" and pods are 	
+=======================================================
+--> Deployment --> replica-set --> pod --> containers  |	
+=======================================================
+
+(Now)- practice
+
+-- change : the "replicas" to 30
+-- git push & pull
+-- kubectl apply -f 16-deployemnt.yaml
+-- kubectl get pods # we see 30-replicas created 
+-- watch kubectl get pods 
+}	 
+
+
+
+
+
+{
+k8 resources
+-----------
+namespace
+pod
+	resources
+	env
+	label
+	annotations
+configmap
+secret
+
+services
+	cluster IP
+	nodePort
+	LoadBalancer
+LoadBalancer > nodePort > cluster IP
+Pod to Pod communication using and Load balancing. expose your pod using service to access from internet
+
+kind:
+apiVersion:
+metadata:
+	name:
+	labels:
+spec:
+
+Sets
+-------
+ReplicaSet
+DeploymentSet
+DaemonSet
+StatefulSet
+
+ReplicaSet
+-----------
+makes sure your desired number of pods running all the time
+
+replicaset --> 3 pods nginx
+replicaset cant update the image version. its only responsibilities is to main desired number of replicas..
+
+deployment
+-----------
+nginx-c8bb98ddc-6qmc9
+
+deployment will create replicaset. so replicaset is subset/part of deployment
+
+(https://github.com/ahmetb/kubectx)        
+             
+sudo git clone https://github.com/ahmetb/kubectx /opt/kubectx
+sudo ln -s /opt/kubectx/kubectx /usr/local/bin/kubectx
+sudo ln -s /opt/kubectx/kubens /usr/local/bin/kubens  
+}
