@@ -150,7 +150,7 @@ Creating a cluster : (using config-file)
   -- git branch -M main    
   -- git remote add origin https://github.com/Shahul1507/k8-ekctl.git   
   -- git add . ; git commit -m "k8"; git push origin main
-  -- git clone https://github.com/Shahul1507/k8-ekctl.git  (in workstation server)
+  -- git clone https://github.com/Shahul1507/k8-eksctl.git  (in workstation server)
   -- cd k8-eksctl
   -- ls -l
   -- cat eks-yaml
@@ -160,7 +160,7 @@ Creating a cluster : (using config-file)
 check:
 ------
 -- aws --> cloudformation --> stacks
--- aws --> EKS --> clusters --> "expense-1"
+-- aws --> EKS --> clusters --> "expense"
 -- aws --> EC2 -->  instances --> "3 nodes will be created"
 
 }
@@ -318,3 +318,4 @@ kubectl exec -it <pod-name> -c <container-name> -- bash (-c - specific container
 cluster:
 -------
 eksctl create cluster --config-file=<file.yaml>
+eksctl delete cluster --config-file=<file.yaml>

@@ -46,7 +46,7 @@ DOCKER INSTALLATION
   -- run cmd (yum install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin)
   -- run cmd (systemctl start docker)
   -- run cmd (systemctl status docker)
-    -- should be (Active: active (running) )
+  -- should be (Active: active (running) )
   -- add ec2-user to docker secoundary group ( usermod -aG docker ec2-user)
   -- run cmd (exit) and re-login to server to apply the changes
   -- now run docker with normal ec2-user 

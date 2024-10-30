@@ -4,7 +4,7 @@ EXPENSE-PROJECT
 (Namespace to expense-project)
 
 --> creating "expense-k8" repo in git-hub
---> clone the repo to local
+--> clone the repo to local (git clone https://github.com/Shahul1507/expense-k8.git)
 --> creating "namespace.yaml" to expense-project in "expense-k8"
  
      namespace.yaml
@@ -20,7 +20,8 @@ EXPENSE-PROJECT
  -----
      -- git clone to server (moba) 
      -- cd expense-k8
-     -- kubectl apply -f namespace.yaml      
+     -- kubectl apply -f namespace.yaml
+     -- kubectl get namespaces      
 
 =======
  MYSQL |
@@ -73,7 +74,7 @@ EXPENSE-PROJECT
         -- kubectl apply -f manifest.yaml  
         -- kubectl get pods -n expense (syntax: kubectl get pods -n <name-space name> )          
            # mysql is running
-        -- kubectl exec -it mysql <pod-name> -n expense -- bash   
+        -- kubectl exec -it mysql-c5c874864-gmwnp -n expense -- bash   
            # mysql -u root -pExpenseApp@1
            # show databases;
            # use transactions;
@@ -118,8 +119,9 @@ BACKEND |
 ========  
 {   
 (Creating "BACKEND")  
---> creating "configmap" to backend
+
 --> creating "backend" folder in "expense-k8"
+--> creating "configmap" to "backend"
 --> creating "manifest.yaml" file in "backend" folder 
 --> creating "service" to "backend"
 
@@ -204,8 +206,8 @@ BACKEND |
         -- git pull
         -- cd ../backend
         -- kubectl apply -f manifest.yaml  
-        -- kubectl get pods -n 
-        -- kubectl get svc
+        -- kubectl get pods -n expense
+        -- kubectl get svc -n expense
         -- kubectl logs <pod-name> -n expense 
     } 
 
@@ -241,10 +243,10 @@ BACKEND |
     
         (pulling to workstation)--Mobaxterm
             -- git pull
-            -- cd debug
+            -- cd ../debug
             -- kubectl apply -f manifest.yaml  # pod debug is created
-            -- kubectl get pods
-            -- kubectl exec -it debug -- bash
+            -- kubectl get pods -n expense
+            -- kubectl exec -it debug -n expense -- bash
                # telnet mysql 3306 
                # telnet backend 8080
                # curl http://backend:8080/health
