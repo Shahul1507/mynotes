@@ -1,20 +1,511 @@
+                                                    --------------
+                                                    | KUBERNETES |  
+                                                    --------------
+                                                        DAY-4
+                                                    -------------		
+                                                    |  CONTENT  | 
+                                                    -------------
+                                                    --> VOLUMES
+                                                        -- EBS - (Elastic block storage)
+                                                           - Static Provisioning
+                                                           - Dynamic Provisioning
+
+
+Ref link: https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/examples/kubernetes/static-provisioning/manifests/pv.yaml
+
+=====================
 Volumes in kubernetes
 =====================
-external HD --> Offline, near to our computer, more speed
-google drive --> Online, somewhere in network, less speed
+--> creating storage outside cluster is safest 
+--> As,cluster is deleted - storage gets deleted 
+--> So,we create volume outside cluster & mount the volume to cluster
+--> storing data by using "volumes" in "AWS"
 
-EBS and EFS
+------------------------------
+There are 2 options in "AWS" :
+------------------------------
+    --> EBS -- (Elastic block storage) - External HD
+    --> EFS -- (Elastic file storage ) - Google Drive
+    Example:
+       -- external HD --> Offline, near to our computer, more speed
+       -- google drive --> Online, somewhere in network, less speed
 
-Static Provisioning
-Dynamic Provisioning
+There are 2 Types:
+------------------
+1.Static Provisioning
+2.Dynamic Provisioning
 
-Static Provisioning
---------------------
-EBS
+====================
+Static Provisioning - (EBS) -- (Important)
+====================
+In, static provisioning : volume is manually created 
 
-1. We need to create volumes
-2. We need to install the drivers.
-3. EKS nodes should have permissions to access EBS volumes.
+   --> 1. We need to create volumes
+   --> 2. We need to install the drivers. (https://github.com/kubernetes-sigs/aws-ebs-csi-driver)
+   --> 3. EKS nodes should have permissions to access EBS volumes.
+{
+
+(1.creating volumes in required avaliability-zone based on nodes created)
+
+    {
+    --> AWS - volumes - create volume
+        -- volume-type : ssd gp3
+        -- size : 20gb
+        -- avaliability-zone: us-east-1d # check the nodes Avalibility-zone and select
+        click on "create volume"
+    }
+
+(2.Installing drivers)
+
+    {
+    --> we have, aws-ebs-csi drivers 
+    --> ebs = aws driver 
+    --> csi = k8 driver 
+    --> Ref-link : (https://github.com/kubernetes-sigs/aws-ebs-csi-driver)
+    --> click on "driver installation" under "documentation"
+    --> copy the cmd 
+        -- kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-1.36")
+    --> run it after "cluster" creation in "work-station" node
+        -- kubectl get namespaces
+        -- kubectl get pods -n kube-system
+        # we see all administration pods: ebs-csi pods are running 
+        # In k8-everything runs as pod
+    }
+
+(3. Creating EKS nodes permissions to access EBS volumes.) 
+
+    {
+    --> Every Instance has a "IAM Role"
+    --> Select "Instance"
+    --> Under "details"
+        -- select "IAM Role"
+        -- Click on "link"
+        -- under "permission-policies"
+        -- click "add-permission"
+        -- "attach policies"
+        -- search "ebs" - select "AmazonEBSCSIdriverpolicy"
+        -- click on "add permissions"
+    }
+
+}
+
+    Persistant Volumes(PV)and Persistant volume claim(PVC)
+    ------------------------------------------------------
+    --> k8 creates a wrapper object to manage underlying volumes.
+    --> k8 engineer will not have full idea on volumes.
+    --> "PV" represents the physical storage like EBS/EFS.
+
+    STEPS:
+    ------
+    --> Created "EBS-volume" and equivalent object "PV" in a cluster 
+    --> claiming the volume through "pv" from "volume" by "pvc"
+    --> mounting the claimed volume to "pod "
+        [pod -- pvc -- pv -- volume]
+
+---------------------
+CREATING STATIC-EBS  |
+---------------------
+
+    STEPS:
+        --> 1.creating "PV" 
+        --> 2.claiming "pv" by "PVC"
+        --> 3.mounting to "pod"
+        --> 4.creating "lb" service to "pod"
+    {
+    1.(creating "PV")
+
+        {
+        --> creating "volume" folder in "k8-resources"
+        --> create a file "01-ebs-static.yaml"
+        --> https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/examples/kubernetes/static-provisioning/manifests/pv.yaml   
+        --> copy the "pv" data from link to "01-ebs-static.yaml" and modify as per requirement
+            
+            01-ebs-static.yaml - (pv)
+            ------------------
+            {
+            apiVersion: v1
+            kind: PersistentVolume
+            metadata:
+            name: ebs-static  # add pv-name
+            spec:
+            accessModes:
+            - ReadWriteOnce    
+            capacity:
+                storage: 20Gi     #volume size
+            csi:
+                driver: ebs.csi.aws.com
+                fsType: ext4
+                volumeHandle: vol-0e534628d19fc28f4  #volume-ID created in aws
+            }
+        (pushing to git-hub)
+        -- git add . ; git commit -m "expense-k8"; git push origin main
+
+        (pulling to workstation)--Mobaxterm
+            -- git clone https://github.com/Shahul1507/k8-resources.git
+            -- cd k8-resources/volumes
+            -- kubectl apply -f  01-ebs-static.yaml
+            -- kubectl get pv
+            # reclaim policy is always in "retain"  
+    
+        }
+
+    2.(creating "pvc"- claiming "pv")
+
+        {
+        --> update file "01-ebs-static.yaml" with "pvc" script
+        --> https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/examples/kubernetes/static-provisioning/manifests/pv.yaml   
+        --> copy the "pvc" data from link to "01-ebs-static.yaml"  and modify as per requirement
+
+                01-ebs-static.yaml -(pvc)
+                ------------------    
+                {
+                    apiVersion: v1
+                    kind: PersistentVolumeClaim
+                    metadata:
+                    name: ebs-static
+                    spec:
+                    storageClassName: "" # Empty string must be explicitly set otherwise default StorageClass will be set
+                    volumeName: ebs-static
+                    accessModes:
+                        - ReadWriteOnce
+                    resources:
+                        requests:
+                        storage: 5Gi                
+                } 
+        (pushing to git-hub)
+        -- git add . ; git commit -m "expense-k8"; git push origin main
+
+        (pulling to workstation)--Mobaxterm
+            -- git pull
+            -- kubectl apply -f  01-ebs-static.yaml
+            -- kubectl get pv
+                # status is "bound" - means "pvc" attached to "pv"
+            -- kubectl describe pvc ebs-static
+            -- kubectl describe pv ebs-static    
+                        
+        }
+
+    3.(creating "pod"- attaching "pvc")
+
+        {
+        --> update file "01-ebs-static.yaml" with "pod" script
+        --> https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/examples/kubernetes/static-provisioning/manifests/pv.yaml   
+        --> copy the "pod" data from link to "01-ebs-static.yaml"  and modify as per requirement
+
+                01-ebs-static.yaml -(pod)
+                ------------------    
+                {
+                    apiVersion: v1
+                    kind: Pod
+                    metadata:
+                    name: ebs-static
+                    labels:
+                        purpose: ebs-static
+                    spec:
+                    #   nodeSelector:
+                    #     topology.kubernetes.io/zone: us-east-1d
+                    containers:
+                    - name: nginx
+                        image: nginx
+                        volumeMounts: # docker run -v hostpath:contaierpath
+                        - name: ebs-static
+                        mountPath: /usr/share/nginx/html
+                    volumes:
+                    - name: ebs-static
+                        persistentVolumeClaim:
+                        claimName: ebs-static             
+                } 
+        (pushing to git-hub)
+        -- git add . ; git commit -m "expense-k8"; git push origin main
+
+        (pulling to workstation)--Mobaxterm
+            -- git pull
+            -- kubectl apply -f  01-ebs-static.yaml
+            -- kubectl get pods
+            -- watch kubectl get pods
+            -- kubectl get pods -o wide
+                # we see pod created in "us-east-1b" node 
+            -- kubectl describe pod ebs-static
+                # we see the error
+                
+        --> Here our volume was creted at "us-east-1d" -- so the above error   
+        
+        (adding node selector)
+            -- attaching pod to "us-east-1d" (as volumes are in us-east-1d)
+            -- kubectl get nodes --show-labels  
+            -- ref-links:(https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/)  
+                        :(https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes/)
+            -- add the syntax to pod script 
+                {
+                        spec:
+                        nodeSelector:
+                            topology.kubernetes.io/zone: us-east-1d
+                }
+            (pushing to git-hub)
+                -- git add . ; git commit -m "expense-k8"; git push origin main
+            
+            (pulling to workstation)--Mobaxterm
+                    -- git pull
+                    -- kubectl delete -f  01-ebs-static.yaml
+                    -- kubectl apply -f  01-ebs-static.yaml
+                    -- kubectl get pods
+                        # ebs-static pod is running
+                    -- watch kubectl get pods
+                    -- kubectl get pods -o wide
+                        # we see pod created in "us-east-1d" node 
+                    -- kubectl describe pod ebs-static
+                                    
+        }    
+
+    4.(creating "service" to "pod")    
+
+        {
+        --> update file "01-ebs-static.yaml" with "service" script
+        --> copy the "14-load-balancer" data to "01-ebs-static.yaml"  and modify as per requirement
+
+            01-ebs-static.yaml -(service)
+            ------------------    
+            {
+                kind: Service
+                apiVersion: v1
+                metadata:
+                name: nginx
+                spec:
+                type: LoadBalancer
+                selector:
+                    purpose: ebs-static
+                ports:
+                - name: nginx-svc-port
+                    protocol: TCP
+                    port: 80 # service port
+                    targetPort: 80 # container port
+                    nodePort: 30007             
+            } 
+    (Allowing port:"30007" in security-group)
+        -- aws --> Instance(us-east-1d) --> edit inbound rules
+    
+            -- Type:custom TCP
+            -- port range:30007
+            -- source: 0.0.0.0/0
+            (save rules)
+            
+    (pushing to git-hub)
+        -- git add . ; git commit -m "expense-k8"; git push origin main
+
+    (pulling to workstation)--Mobaxterm
+        -- git pull
+        -- kubectl apply -f  01-ebs-static.yaml  #service/nginx is created
+        -- kubectl get svc
+            # load balancer link with 80/30007 port
+        (run the link in browser) # we see empty nginx page
+
+        (adding data to pod)
+        -- kubectl get pods
+        -- kubectl exec -it ebs-static -- bash
+            #cd usr/sharenginx/html
+            # echo "<hi> Hello this is EBS Static volumes</h1> > index.html"
+            (run the link in browser) -- #we see the message (Hello this is EBS Static volumes) 
+            #exit
+
+        (deleting the pod & run the link again)
+        -- kubectl delete pod ebs-static
+            (run the link in browser) -- #we see link fails 
+
+        (creating pod again)       
+        -- kubectl apply -f  01-ebs-static.yaml  
+            (run the link in browser) -- #we see the message (Hello this is EBS Static volumes)
+        -- kubectl get pods
+        -- kubectl api resources
+        -- kubectl delete -f 01-ebs-static.yaml 
+                        
+        }
+
+    }
+
+======================
+Dynamic  Provisioning - (EBS) -- (Important)
+======================
+In, Dynamic provisioning : EBS volume is dynamically created while pod gets created.
+Setup:
+   --> 1. We need to install the drivers. (https://github.com/kubernetes-sigs/aws-ebs-csi-driver)
+   --> 2. EKS nodes should have permissions to access EBS volumes.
+
+   --> when ever there is a requirement of dynamical provision of an EBS volume in a cluster
+       -- Deploying the provided "pod" on a cluster along with the "StorageClass" and "PersistentVolumeClaim" 
+
+---------------------
+CREATING DYNAMIC-EBS  |
+---------------------
+
+    STEPS:
+        --> 1.creating "storage class"
+        --> 2.creating "PersistentVolumeClaim"
+        --> 3.creating "pod" 
+        --> 4.creating "lb" service to "pod"
+ 
+    {
+    1.(1.creating "storage class")  -- admin task 
+        {
+            --> create a file "02-ebs-sc.yaml"
+            --> https://github.com/kubernetes-sigs/aws-ebs-csi-driver/tree/master/examples/kubernetes/dynamic-provisioning
+            --> copy the "storageclass.yaml" data from link to "02-ebs-sc.yaml" and modify as per requirement
+                
+                 02-ebs-sc.yaml - (sc)
+                ------------------
+                {
+                    apiVersion: storage.k8s.io/v1
+                    kind: StorageClass
+                    metadata:
+                      name: expense-ebs
+                    reclaimPolicy: Retain
+                    provisioner: ebs.csi.aws.com
+                    volumeBindingMode: WaitForFirstConsumer # storage will be created when pod is getting created
+                }
+                
+                -- kubectl get sc
+                   # we see default "sc" 
+                   # which has "reclaim-policy = delete" 
+                   # because of above reason default "sc" is not used 
+
+            (pushing to git-hub)
+                -- git add . ; git commit -m "expense-k8"; git push origin main
+
+            (pulling to workstation)--Mobaxterm
+                -- git pull
+                -- kubectl apply -f 02-ebs-sc.yaml
+                -- kubectl get sc
+                  # expense storage class 
+        
+        }  
+    2.(creating "PersistentVolumeClaim"")
+
+        {
+        --> create file "03-ebs-dynamic.yaml" with "pvc" script
+        --> https://github.com/kubernetes-sigs/aws-ebs-csi-driver/tree/master/examples/kubernetes/dynamic-provisioning
+        --> copy the "pvc" data from link to "03-ebs-dynamic.yaml"  and modify as per requirement
+
+                03-ebs-dynamic.yaml -(pvc)
+                ------------------    
+                {
+                    apiVersion: v1
+                    kind: PersistentVolumeClaim
+                    metadata:
+                      name: ebs-dynamic
+                    spec:
+                      storageClassName: "expense-ebs"
+                      accessModes:
+                        - ReadWriteOnce
+                      resources:
+                        requests:
+                          storage: 3Gi             
+                } 
+                
+        }
+
+    3.(creating "pod"- attaching "pvc")
+
+        {
+        --> create file "03-ebs-dynamic.yaml" with "pod" script
+        --> https://github.com/kubernetes-sigs/aws-ebs-csi-driver/tree/master/examples/kubernetes/dynamic-provisioning
+        --> copy the "pod" data from link to "03-ebs-dynamic.yaml"  and modify as per requirement
+
+                03-ebs-dynamic.yaml -(pod)
+                ------------------    
+                {
+                    apiVersion: v1
+                    kind: Pod
+                    metadata:
+                      name: ebs-dynamic
+                      labels:
+                        purpose: ebs-dynamic
+                    spec:
+                      nodeSelector:
+                        topology.kubernetes.io/zone: us-east-1d
+                      containers:
+                      - name: nginx
+                        image: nginx
+                        volumeMounts: # docker run -v hostpath:contaierpath
+                        - name: ebs-dynamic
+                          mountPath: /usr/share/nginx/html
+                      volumes:
+                      - name: ebs-dynamic
+                        persistentVolumeClaim:
+                          claimName: ebs-dynamic
+                } 
+
+      
+        }    
+
+    4.(creating "service" to "pod")    
+
+        {
+        --> update file "03-ebs-dynamic.yaml" with "service" script
+        --> copy the "14-load-balancer" data to "03-ebs-dynamic.yaml"  and modify as per requirement
+
+             03-ebs-dynamic.yaml -(service)
+            ------------------    
+            {
+                kind: Service
+                apiVersion: v1
+                metadata:
+                  name: nginx
+                spec:
+                  type: LoadBalancer
+                  selector:
+                    purpose: ebs-dynamic
+                  ports:
+                  - name: nginx-svc-port
+                    protocol: TCP
+                    port: 80 # service port
+                    targetPort: 80 # container port
+                    nodePort: 30007         
+            } 
+    (Allowing port:"30007" in security-group)
+        -- aws --> Instance(us-east-1d) --> edit inbound rules
+    
+            -- Type:custom TCP
+            -- port range:30007
+            -- source: 0.0.0.0/0
+            (save rules)
+            
+    (pushing to git-hub)
+        -- git add . ; git commit -m "expense-k8"; git push origin main
+
+    (pulling to workstation)--Mobaxterm
+        -- git pull
+        -- kubectl apply -f  03-ebs-dynamic.yaml  #service/nginx is created
+        -- kubectl get svc
+            # load balancer link with 80/30007 port
+        (run the link in browser) # we see empty nginx page
+
+        (adding data to pod)
+        -- kubectl get pods
+        -- kubectl exec -it ebs-static -- bash
+            #cd usr/sharenginx/html
+            # echo "<hi> Hello this is EBS Static volumes</h1> > index.html"
+            (run the link in browser) -- #we see the message (Hello this is EBS Static volumes) 
+            #exit
+
+        (deleting the pod & run the link again)
+        -- kubectl delete pod ebs-static
+            (run the link in browser) -- #we see link fails 
+
+        (creating pod again)       
+        -- kubectl apply -f  03-ebs-dynamic.yaml  
+            (run the link in browser) -- #we see the message (Hello this is EBS Static volumes)
+        -- kubectl get pods
+        -- kubectl api resources
+        -- kubectl delete -f 03-ebs-dynamic.yaml
+                        
+        }
+
+    }   
+
+
+
+
+{
+https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/examples/kubernetes/static-provisioning/manifests/pv.yaml
 
 node is in us-east-1b. can I create disk in us-east-1d?
 
@@ -24,33 +515,46 @@ install drivers
 kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-1.36"
 
 Persistant Volumes and Persistant volume claim
-----------------------------------------------
+-----------------------------------------------
 k8 created a wrapper objects to manage underlying volumes. because k8 engineer will not have full idea on volumes.
 
 PV --> It represents the physical storage like EBS/EFS.
 
 pods should claim PV to access that....
 
+kubectl api-resources
+
 1. is that namespace level or not?
 2. if not namespace level that is cluster level. admin should create the resource
 
 expense project devops engineer got a requirement to have a volume
------------------------------------------------------------------
+------------------------------------------------------------------
 1. you should an email to storage team to create disk. get the approval from manager. they create disk.
 2. you send email to k8 admin to create PV and provide them disk details.
 
 no it's your turn. pvc and claim in the pod
 
-
-dynamic provisioning
--------------------------------
+======================
+Dynamic  Provisioning - (EBS) -- (Important)
+======================
 1. install drivers
 2. give permissions ec2 nodes
 
+
+https://github.com/kubernetes-sigs/aws-ebs-csi-driver/tree/master/examples/kubernetes/dynamic-provisioning
+
+
 storageClass
------------------
+
 admin creates one storage class for EBS for expense project. 
 
 annotation --> curl nginx
 
 nginx service --> nginx pod
+
+}
+INETRVIEW :
+----------
+1.what is static-EBS and dynamic-EBS
+2.PV and PVC
+3.Access modes and reclaim policies
