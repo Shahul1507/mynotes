@@ -1,3 +1,731 @@
+                                        --------------
+                                        | KUBERNETES |  
+                                        --------------
+                                            DAY-5
+                                        -------------		
+                                        |  CONTENT  | 
+                                        -------------
+                                        --> VOLUMES
+                                            -- EFS - (Elastic File storage)
+                                                - Static Provisioning
+                                                - Dynamic Provisioning
+                                        --> Statefulset
+                                        --> Headless Service
+                                        --> Expense Project 
+                                            -- using EBS and Statfulset 
+                                                
+
+
+====================
+Static Provisioning - (EFS) -- (Important)
+====================
+In, static provisioning : volume is manually created 
+
+   --> 1. We need to create EFS volume 
+   --> 2. (i) install drivers (https://github.com/kubernetes-sigs/aws-efs-csi-driver?tab=readme-ov-file)
+          (ii) allowing 2049 traffic from EKS worker nodes 
+   --> 3. EKS nodes should have permissions to access EBS volumes.
+   
+    {
+
+    (1.creating EFS volume )
+
+        {
+        --> AWS - EFS -Filesystem - create file system
+            -- Name : expense
+            (As EFS is a network file system -- we need to create in same network of vpc)
+            -- vpc : eksctl-expense-cluster/vpc
+            -- click on "create "
+            # file system is created 
+            # under expense file-system -- networks -- we see "network is created in aviability-zones"
+            
+        }
+
+    (2.(i)Installing drivers)
+
+        {
+        --> we have, aws-efs-csi drivers 
+        --> efs = aws driver 
+        --> csi = k8 driver 
+        --> Ref-link : (https://github.com/kubernetes-sigs/aws-efs-csi-driver#-manifest-public-registry-)
+        --> select the latest branch (https://github.com/kubernetes-sigs/aws-efs-csi-driver/branches/active) 
+        --> ec2-user
+        --> copy latest version and add to below cmd 
+        --> copy the cmd from link and run
+            -- ( kubectl kustomize \
+            "github.com/kubernetes-sigs/aws-efs-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-2.X" > public-ecr-driver.yaml)    
+        --> file "public-ecr-driver.yaml" is created
+            -- ls -l
+            -- kubectl apply -f public-ecr-driver.yaml
+        (run kubeconfig when ever there is cluster config issue)
+            -- aws eks --region us-east-1 update-kubeconfig --name expense    
+            -- kubectl apply -f public-ecr-driver.yaml
+            #efs-csi drivers are installed
+        }
+    (2.(ii) allowing 2049 traffic from EKS worker nodes )
+
+        {
+        -->( aws - EFS - Filesystems - expense - Network)
+            -- we see "security-group" for "NFS"
+            -- "EFS" volume gets request from "eks-worker-node"
+            -- when a request comes from "pod" it comes out from "eks-worker-node"
+            -- we have "security-group" to "eks-worker-node"
+            -- we have "security-group" to "NFS"
+            -- "NFS" has port "2049" by default
+        now:
+        -->("EFS-SG" should allow traffic on "2049" from the "SG" attached "eks-worker-node")
+        -->(Allowing port:"2049" in security-group)
+            -- aws --> Instance(worker-node) --> edit inbound rules
+    
+            -- Type: NFS
+            -- port range: 2049
+            -- source: eks-cluster-sg
+            (save rules)
+            
+
+        }
+    (3. Creating EKS nodes permissions to access EBS volumes.) 
+
+        {
+        --> Every Instance has a "IAM Role"
+        --> Select "Instance"
+        --> Under "details"
+            -- select "IAM Role"
+            -- Click on "link"
+            -- under "permission-policies"
+            -- click "add-permission"
+            -- "attach policies"
+            -- search "efs" - select "AmazonEFSCSIdriverpolicy"
+            -- click on "add permissions"
+        }
+
+    }
+
+---------------------
+CREATING STATIC-EFS |
+---------------------
+
+    STEPS:
+        --> 1.creating "PV" 
+        --> 2.claiming "pv" by "PVC"
+        --> 3.mounting to "pod" through "pvc"
+        --> 4.creating "lb" service to "pod"
+        --> 5.open node port in EKS worker nodes
+    {
+        1.(creating "PV")
+
+        {
+        --> creating "volume" folder in "k8-resources"
+        --> create a file "04-efs-static.yaml"
+        --> https://github.com/kubernetes-sigs/aws-efs-csi-driver/blob/master/examples/kubernetes/static_provisioning/specs/pv.yaml
+        --> copy the "pv" data from link to "04-efs-static.yaml" and modify as per requirement
+        --> Quotas for Amazon EFS file systems
+                    Resource	                  Quota
+                Size of a single file	52,673,613,135,872 bytes (47.9 TiB)
+            
+            04-efs-static.yaml - (pv)
+            ------------------
+            {
+                apiVersion: v1
+                kind: PersistentVolume
+                metadata:
+                  name: expense-efs
+                spec:
+                  capacity:
+                    storage: 5Gi #dummy - it automatically increases as per storage requirement
+                  volumeMode: Filesystem
+                  accessModes:
+                    - ReadWriteOnce
+                  storageClassName: ""
+                  persistentVolumeReclaimPolicy: Retain
+                  csi:
+                    driver: efs.csi.aws.com
+                    volumeHandle: fs-00cbb3f0e4313c700 # # update fs-ID created in aws(EFS)
+            }
+
+        (pushing to git-hub)
+        -- git add . ; git commit -m "expense-k8"; git push origin main
+
+        (pulling to workstation)--Mobaxterm
+            -- git clone https://github.com/Shahul1507/k8-resources.git
+            -- cd k8-resources/volumes
+            -- kubectl apply -f  04-efs-static.yaml
+            -- kubectl get pv
+              # expense-efs is created
+    
+        }
+
+        2.(creating "pvc"- claiming "pv")
+
+        {
+        --> update file "04-efs-static.yaml" with "pvc" script
+        --> copy the "pvc" data from "01-ebs-static.yaml" to "04-efs-static.yaml" and modify as per requirement
+
+                 04-efs-static.yaml -(pvc)
+                ------------------    
+                {
+                    apiVersion: v1
+                    kind: PersistentVolumeClaim
+                    metadata:
+                      name: expense-efs
+                    spec:
+                      storageClassName: "" # Empty string must be explicitly set otherwise default StorageClass will be set
+                      volumeName: expense-efs
+                      accessModes:
+                        - ReadWriteOnce
+                      resources:
+                        requests:
+                          storage: 5Gi             
+                } 
+        (pushing to git-hub)
+        -- git add . ; git commit -m "expense-k8"; git push origin main
+
+        (pulling to workstation)--Mobaxterm
+            -- git pull
+            -- kubectl apply -f  04-efs-static.yaml
+            -- kubectl get pvc
+                # status is "bound" - means "pvc" attached to "pv"
+            -- kubectl describe pvc efs-static
+            -- kubectl describe pv efs-static    
+                        
+        }
+
+        3.(creating "pod"- attaching "pvc")
+
+        {
+        --> update file "04-efs-static.yaml" with "pod" script   
+        --> copy the "pod" data from "01-ebs-static.yaml" to "04-efs-static.yaml" and modify as per requirement
+
+
+                04-efs-static.yaml -(pod)
+                ------------------    
+                {
+                    apiVersion: v1
+                    kind: Pod
+                    metadata:
+                      name: efs-static
+                      labels:
+                        purpose: efs-static
+                    spec:
+                      nodeSelector:
+                        topology.kubernetes.io/zone: us-east-1d #add ur node avaliability zone 
+                      containers:
+                      - name: nginx
+                        image: nginx
+                        volumeMounts: # docker run -v hostpath:contaierpath
+                        - name: expense-efs
+                          mountPath: /usr/share/nginx/html
+                      volumes:
+                      - name: expense-efs
+                        persistentVolumeClaim:
+                          claimName: expense-efs         
+                } 
+
+            (pushing to git-hub)
+                -- git add . ; git commit -m "expense-k8"; git push origin main
+            
+            (pulling to workstation)--Mobaxterm
+                    -- git pull
+                    -- kubectl apply -f  04-efs-static.yaml
+                    -- kubectl get pods
+                        # efs-static pod is running
+
+                                    
+        } 
+        
+        4.(creating "service" to "pod")    
+
+        {
+            --> update file "04-efs-static.yaml" with "pod" script   
+            --> copy the "service" data from "01-ebs-static.yaml" to "04-efs-static.yaml" and modify as per requirement
+    
+            04-efs-static.yaml -(service)
+            ------------------    
+            {
+                kind: Service
+                apiVersion: v1
+                metadata:
+                  name: nginx
+                spec:
+                  type: LoadBalancer
+                  selector:
+                    purpose: efs-static #changed
+                  ports:
+                  - name: nginx-svc-port
+                    protocol: TCP
+                    port: 80 # service port
+                    targetPort: 80 # container port
+                    nodePort: 30007           
+            } 
+        }    
+       5.(Allowing port:"30007" in security-group)
+        {
+        -- aws --> Instance(us-east-1x) --> security --> select "security_id" --> edit inbound rules 
+    
+            -- Type:custom TCP
+            -- port range:30007
+            -- source: 0.0.0.0/0
+            (save rules)
+            
+    (pushing to git-hub)
+        -- git add . ; git commit -m "expense-k8"; git push origin main
+
+    (pulling to workstation)--Mobaxterm
+        -- git pull
+        -- kubectl apply -f  04-efs-static.yaml  #service/nginx is created
+        -- kubectl get pods
+        
+
+        (adding data to pod)
+        -- kubectl get pods
+        -- kubectl exec -it efs-static -- bash
+            # cd usr/share/nginx/html
+            # ls -l
+            # echo "<hi> Hello this is EFS Static volumes</h1> > index.html"
+            # exit
+        -- kubectl get svc
+        # load balancer link with 80/30007 port
+        (run the link in browser) -- #we see the message (Hello this is EBS Static volumes)
+        -- kubectl delete -f 01-efs-static.yaml 
+                        
+        }
+    }
+
+======================
+Dynamic  Provisioning - (EFS) -- (Important)
+======================
+In, Dynamic provisioning : EFS not created automatiaclly ,have to create it and mount-points are dynamically
+Setup:
+    --> 1. We need to create EFS volume 
+    --> 2. We need to install the drivers. (https://github.com/kubernetes-sigs/aws-efs-csi-driver?tab=readme-ov-file#-manifest-public-registry-)
+    --> 3. EKS nodes should have permissions to access EFS volumes.
+
+    --> when ever there is a requirement of dynamical provision of an EFS volume in a cluster
+        -- Deploying the provided "pod" on a cluster along with the "StorageClass" and "PersistentVolumeClaim" 
+
+---------------------
+CREATING DYNAMIC-EFS  |
+---------------------
+
+    STEPS:
+        --> 1.creating "EFS" volume #not dynamic as in EBS
+        --> 2.creating "storage class"
+        --> 3.creating "PersistentVolumeClaim"
+        --> 4.creating "pod" 
+        --> 5.creating "lb" service to "pod"
+    
+{
+    1.(creating EFS volume ) 
+
+    {
+    --> AWS - EFS -Filesystem - create file system
+        -- Name : expense
+        (As EFS is a network file system -- we need to create in same network of vpc)
+        -- vpc : eksctl-expense-cluster/vpc
+        -- click on "create "
+        # file system is created 
+        # under expense file-system -- networks -- we see "network is created in aviability-zones"
+        
+    }    
+    2.(creating "storage class")  -- admin task 
+        -- It takes care of volume creation & pv creation
+        {
+            --> create a file "05-efs-sc.yaml"
+            --> https://github.com/kubernetes-sigs/aws-efs-csi-driver/blob/master/examples/kubernetes/dynamic_provisioning/specs/storageclass.yaml
+            --> copy the "storageclass.yaml" data from link to "05-efs-sc.yaml" and modify as per requirement
+            --> remove all optional fields    
+                 05-efs-sc.yaml - (sc)
+                ------------------
+                {
+                    kind: StorageClass
+                    apiVersion: storage.k8s.io/v1
+                    metadata:
+                      name: efs-expense
+                    reclaimPolicy: Retain  
+                    provisioner: efs.csi.aws.com
+                    parameters:
+                      provisioningMode: efs-ap
+                      directoryPerms: "700"
+                      fileSystemId: fs-00cbb3f0e4313c700 #EFS is from aws
+                      basePath: "/expense"    # belongs to expense project          
+                }
+                
+                -- kubectl get sc
+                    # we see default "sc" 
+                    # which has "reclaim-policy = delete" 
+                    # because of above reason default "sc" is not used 
+
+            (pushing to git-hub)
+                -- git add . ; git commit -m "expense-k8"; git push origin main
+
+            (pulling to workstation)--Mobaxterm
+                -- git pull
+                -- kubectl apply -f 05-efs-sc.yaml
+                -- kubectl get sc
+                    # expense storage class 
+        
+        }  
+    3.(creating "PersistentVolumeClaim"")
+
+        {
+        --> create file "06-efs-dynamic.yaml" with "pvc" script
+        -->https://github.com/kubernetes-sigs/aws-efs-csi-driver/blob/master/examples/kubernetes/dynamic_provisioning/specs/pod.yaml
+        --> copy the "pvc" data from link to "06-efs-dynamic.yaml"  and modify as per requirement
+
+                 06-efs-dynamic.yaml-(pvc)
+                ------------------    
+                {
+                    apiVersion: v1
+                    kind: PersistentVolumeClaim
+                    metadata:
+                      name: efs-dynamic
+                    spec:
+                      storageClassName: "efs-expense"
+                      accessModes:
+                        - ReadWriteMany  #can be mounted to many
+                      resources:
+                        requests:
+                          storage: 3Gi         
+                } 
+                
+        }
+
+    4.(creating "pod"- attaching "pvc")
+
+        {
+            --> create file "06-efs-dynamic.yaml" with "pod" script
+            -->https://github.com/kubernetes-sigs/aws-efs-csi-driver/blob/master/examples/kubernetes/dynamic_provisioning/specs/pod.yaml
+            --> copy the "pod" data from link to "06-efs-dynamic.yaml"  and modify as per requirement
+
+                06-efs-dynamic.yaml -(pod)
+                ------------------    
+                {
+                    apiVersion: v1
+                    kind: Pod
+                    metadata:
+                      name: efs-dynamic
+                      labels:
+                        purpose: efs-dynamic
+                    spec:
+                      containers:
+                      - name: nginx
+                        image: nginx
+                        volumeMounts: # docker run -v hostpath:contaierpath
+                        - name: efs-dynamic
+                          mountPath: /usr/share/nginx/html
+                      volumes:
+                      - name: efs-dynamic
+                        persistentVolumeClaim:
+                          claimName: efs-dynamic
+                } 
+
+        
+        }    
+
+    5.(creating "service" to "pod")    
+
+        {
+            --> create file "06-efs-dynamic.yaml" with "service" script
+            -->https://github.com/kubernetes-sigs/aws-efs-csi-driver/blob/master/examples/kubernetes/dynamic_provisioning/specs/pod.yaml
+            --> copy the "service" data from link to "06-efs-dynamic.yaml"  and modify as per requirement
+
+                06-efs-dynamic.yaml -(pod)
+                ------------------    
+                {
+                    kind: Service
+                    apiVersion: v1
+                    metadata:
+                      name: nginx
+                    spec:
+                      type: LoadBalancer
+                      selector:
+                        purpose: efs-dynamic
+                      ports:
+                      - name: nginx-svc-port
+                        protocol: TCP
+                        port: 80 # service port
+                        targetPort: 80 # container port
+                        nodePort: 30007   
+               } 
+        }        
+    6.(Allowing port:"30007" in security-group)
+        {
+            -- aws --> Instance(us-east-1x) --> security --> select "security_id" --> edit inbound rules 
+        
+                -- Type:custom TCP
+                -- port range:30007
+                -- source: 0.0.0.0/0
+                (save rules)
+    
+            (pushing to git-hub)
+                -- git add . ; git commit -m "expense-k8"; git push origin main
+
+            (pulling to workstation)--Mobaxterm
+                -- git pull
+                -- kubectl apply -f  06-efs-dynamic.yaml  #service/nginx is created
+                -- kubectl get pv,pvc #created 
+                # we can see the "access-points" in aws-efs created dynamically
+
+                -- kubectl get pods
+                -- kubectl get svc
+                    # load balancer link with 80/30007 port
+                -- kubectl delete -f 06-efs-dynamic.yaml
+                -- kubectl delete -f 05-efs-sc.yaml [or] kubectl delete sc efs-expense.yaml
+                -- delete the volume in AWS 
+                -- eksctl delete cluster --config-file=eks.yaml              
+                }
+
+}    
+
+=============
+STATEFUL-SET
+=============
+================
+HEADLESS-SERVICE
+================
+what is headless service?
+headless service will not have cluster IP, if anyone does nslookup on headless service it will give all end points
+
+
+======================
+EXPENSE - PROJECT  - (using EBS and Stateful-set)
+======================
+-------
+MySQL
+-------
+{
+Steps:
+    1. create expense namespace
+    2. install ebs drivers
+    3. create ebs sc
+    4. give eks nodes ebs permission
+    5. create pvc, create statefulset
+
+1.(Namespace to expense-project)
+    {
+        --> creating "k8-expense-volumes" repo in git-hub
+        --> creating "mysql" folder in "k8-expense-volumes" 
+        --> creating "01-namespace.yaml" file in "k8-expense-volumes"
+        --> clone the repo to local (git clone https://github.com/Shahul1507/k8-expense-volumes.git)
+
+                namespace.yaml
+                --------------
+                apiVersion: v1
+                kind: Namespace
+                metadata:
+                name: expense
+                labels:
+                    project: expense
+                    environment: dev
+            Steps:
+            -----
+                -- git clone https://github.com/Shahul1507/k8-expense-volumes.git  (moba) 
+                -- cd k8-expense-volumes
+                -- kubectl apply -f namespace.yaml
+                -- kubectl get namespaces    
+    }
+2.(Installing ebs-csi drivers)
+
+    {
+        --> we have, aws-ebs-csi drivers 
+        --> ebs = aws driver 
+        --> csi = k8 driver 
+        --> Ref-link : (https://github.com/kubernetes-sigs/aws-ebs-csi-driver)
+        --> click on "driver installation" under "documentation"
+        --> copy the cmd 
+            -- kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-1.36"
+        --> run it after "cluster" creation in "work-station" node
+            -- kubectl get namespaces
+           
+    }
+3.(creating "storage class")  -- admin task 
+    -- It takes care of volume creation & pv creation
+    {
+         --> create a file "02-ebs-sc.yaml" in "k8-expense-volumes" 
+         --> https://github.com/kubernetes-sigs/aws-ebs-csi-driver/tree/master/examples/kubernetes/dynamic-provisioning
+         --> copy the "storageclass.yaml" data from link to "02-ebs-sc.yaml" and modify as per requirement
+             
+              02-ebs-sc.yaml - (sc)
+             ------------------
+             {
+                 apiVersion: storage.k8s.io/v1
+                 kind: StorageClass
+                 metadata:
+                   name: expense-ebs
+                 reclaimPolicy: Retain
+                 provisioner: ebs.csi.aws.com
+                 volumeBindingMode: WaitForFirstConsumer # storage will be created when pod is getting created
+             }
+             
+
+
+         (pushing to git-hub)
+             -- cd k8-expense-volumes           
+             -- git init  
+             -- git branch -M main    
+             -- git remote add origin https://github.com/Shahul1507/k8-expense-volumes.git
+             -- git add . ; git commit -m "k8-expense-volumes"; git push origin main
+
+         (pulling to workstation)--Mobaxterm
+             -- git clone https://github.com/Shahul1507/k8-expense-volumes.git 
+             -- cd k8-expense-volumes
+             -- kubectl apply -f 02-ebs-sc.yaml
+             -- kubectl get sc
+               # expense storage class 
+     
+    } 
+4.(Creating EKS nodes permissions to access EBS volumes.) 
+
+    {
+    --> Every Instance has a "IAM Role"
+    --> Select "Instance"
+    --> Under "details"
+        -- select "IAM Role"
+        -- Click on "link"
+        -- under "permission-policies"
+        -- click "add-permission"
+        -- "attach policies"
+        -- search "ebs" - select "AmazonEBSCSIdriverpolicy"
+        -- click on "add permissions"
+    }   
+5.(creating "PersistentVolumeClaim" with "statefulset" and "headless service")
+
+    {
+    --> create file "manifest.yaml"  im "k8-expense-volumes/mysql"
+        1.create "headless service"  in "manifest.yaml" file
+        2.create "normal service " along with "headless service" in "manifest.yaml" file
+        3.create  "statefulset" in "manifest.yaml" file
+          -- ref- link (https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/)
+          -- copy the "statefullset" data from link to "manifest.yaml"  and modify as per requirement with "details"
+          -- main diff. in "statefulset" is
+             -- It will have "headless service"
+             -- along with "pvc" for sure
+
+
+    (1.create "headless service"  in "manifest.yaml" file)     
+            manifest.yaml -(headless-service)
+            ------------------    
+            {
+                kind: Service
+                apiVersion: v1
+                metadata:
+                  name: mysql-headless # add headless service
+                  namespace: expense  # assign namespace
+                spec:
+                  clusterIP: None # for headless service there is no cluster IP
+                  selector:
+                    project: expense # name of project
+                    component: mysql 
+                    tier: db
+                  ports:
+                  - protocol: TCP
+                    port: 3306 # service port
+                    targetPort: 3306           
+            } 
+    (2.create "normal service " along with "headless service" in "manifest.yaml" file)        
+            manifest.yaml -(normal-service)
+            ------------------ 
+            {
+                kind: Service
+                apiVersion: v1
+                metadata:
+                  name: mysql
+                  namespace: expense
+                spec:
+                  selector:        #same lables as headless service
+                    project: expense
+                    component: mysql
+                    tier: db
+                  ports:
+                  - protocol: TCP
+                    port: 3306 # service port
+                    targetPort: 3306
+            }
+    (3.create  "statefulset" in "manifest.yaml" file)        
+            manifest.yaml -(stateful-set)
+            ----------------------------- 
+            {
+                apiVersion: apps/v1
+                kind: StatefulSet
+                metadata:
+                  name: mysql
+                  namespace: expense
+                spec:
+                  selector:
+                    matchLabels:
+                      project: expense
+                      component: mysql
+                      tier: db
+                  serviceName: "mysql-headless" # this is the headless service should be mentioned for statefulset
+                  replicas: 2 
+                  template:
+                    metadata:
+                      labels:
+                        project: expense
+                        component: mysql
+                        tier: db
+                    spec:
+                      containers:
+                      - name: mysql
+                        image: joindevops/mysql:v1
+                        volumeMounts:
+                        - name: mysql
+                          mountPath: /var/lib/mysql
+                  # This is PVC defnition, directly mentioned here
+                  volumeClaimTemplates:
+                  - metadata:
+                      name: mysql
+                    spec:
+                      accessModes: [ "ReadWriteOnce" ]
+                      storageClassName: "expense-ebs" # 02-ebs-sc.yaml
+                      resources:
+                        requests:
+                          storage: 1Gi
+            } 
+            (pushing to git-hub)
+            -- git add . ; git commit -m "expense-k8"; git push origin main
+        
+            (pulling to workstation)--Mobaxterm
+                -- git pull
+                -- cd mysql
+                -- kubectl apply -f manifest.yaml
+                -- kubens expense
+                -- kubectl get pods
+                -- kubectl get pods -n expense (syntax: kubectl get pods -n <name-space name> )          
+                   # 2 replicas (mysql-0 & mysql-1) is running
+                -- kubectl get pv,pvc  
+                   # 2 volumes are created 
+                   # check aws-volumes (2 "1gib are created") 
+                -- kubectl grt svc
+                   # mysql-headless is present
+                -- kubectl exec -it mysql-0 -n expense -- bash   
+                   # cat /etc/*release -- oracle OS
+                   # microdnf update -y
+                   # microdnf install -y bind-utils
+                   # nslookup mysql-headless
+                   (we see pod IP_address)
+                   # exit
+                
+
+    --> with normal-service & deployment-set 
+        -- when "nslook-up" is done - we get "cluster_IP"
+    --> with headless-service & stateful-set 
+        -- when "nslook-up" is done - we get "pod_IP"    
+    }  
+    -- kubectl delete statefulset mysql   
+    -- kubectl delete -f manifest.yaml
+    -- kubectl delete -f 02-ebs-sc.yaml
+    -- delete the volume in AWS 
+    -- eksctl delete cluster --config-file=eks.yaml 
+}  
+--------
+Backend
+--------
+{
+    --> Backend "manifest.yaml"
+}
+
+{                                            
 EFS
 ----------
 elastic file system
@@ -63,3 +791,22 @@ Name:   mysql-headless.expense.svc.cluster.local
 Address: 192.168.0.57
 Name:   mysql-headless.expense.svc.cluster.local
 Address: 192.168.10.99
+}
+
+
+INETRVIEW
+
+1. statefulset vs deployment
+-----------------------------
+A)
+statefulset is for DB related applications.
+deployment is for stateless applications.
+
+statefulset will have headless service along with normal service. statefulset requires pv and pvc objects.
+deployment will not have headless service. 
+
+statefulset pods will be created in orderly manner. 
+statefulset will keep its pod identity. Pod names will created as -0, -1, -2, etc.
+
+2. what is headless-service ? why its is used 
+------------------------------------------------

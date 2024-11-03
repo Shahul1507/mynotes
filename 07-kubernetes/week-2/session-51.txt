@@ -40,7 +40,7 @@ Static Provisioning - (EBS) -- (Important)
 ====================
 In, static provisioning : volume is manually created 
 
-   --> 1. We need to create volumes
+   --> 1. We need to create EBS volumes
    --> 2. We need to install the drivers. (https://github.com/kubernetes-sigs/aws-ebs-csi-driver)
    --> 3. EKS nodes should have permissions to access EBS volumes.
 {
@@ -53,6 +53,7 @@ In, static provisioning : volume is manually created
         -- size : 20gb
         -- avaliability-zone: us-east-1d # check the nodes Avalibility-zone and select
         click on "create volume"
+        # volume-Id : vol-09941d75a3a682b5d
     }
 
 (2.Installing drivers)
@@ -64,7 +65,7 @@ In, static provisioning : volume is manually created
     --> Ref-link : (https://github.com/kubernetes-sigs/aws-ebs-csi-driver)
     --> click on "driver installation" under "documentation"
     --> copy the cmd 
-        -- kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-1.36")
+        -- kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-1.36"
     --> run it after "cluster" creation in "work-station" node
         -- kubectl get namespaces
         -- kubectl get pods -n kube-system
@@ -135,7 +136,7 @@ CREATING STATIC-EBS  |
             csi:
                 driver: ebs.csi.aws.com
                 fsType: ext4
-                volumeHandle: vol-0e534628d19fc28f4  #volume-ID created in aws
+                volumeHandle: vol-09941d75a3a682b5d  # update volume-ID created in aws
             }
         (pushing to git-hub)
         -- git add . ; git commit -m "expense-k8"; git push origin main
@@ -302,7 +303,7 @@ CREATING STATIC-EBS  |
         (adding data to pod)
         -- kubectl get pods
         -- kubectl exec -it ebs-static -- bash
-            #cd usr/sharenginx/html
+            #cd usr/share/nginx/html
             # echo "<hi> Hello this is EBS Static volumes</h1> > index.html"
             (run the link in browser) -- #we see the message (Hello this is EBS Static volumes) 
             #exit
@@ -345,6 +346,7 @@ CREATING DYNAMIC-EBS  |
  
     {
     1.(1.creating "storage class")  -- admin task 
+       -- It takes care of volume creation & pv creation
         {
             --> create a file "02-ebs-sc.yaml"
             --> https://github.com/kubernetes-sigs/aws-ebs-csi-driver/tree/master/examples/kubernetes/dynamic-provisioning
@@ -474,29 +476,16 @@ CREATING DYNAMIC-EBS  |
     (pulling to workstation)--Mobaxterm
         -- git pull
         -- kubectl apply -f  03-ebs-dynamic.yaml  #service/nginx is created
+        -- kubectl get pv
+        -- kubectl get PVC
+        -- kubectl get pods
         -- kubectl get svc
             # load balancer link with 80/30007 port
-        (run the link in browser) # we see empty nginx page
 
-        (adding data to pod)
-        -- kubectl get pods
-        -- kubectl exec -it ebs-static -- bash
-            #cd usr/sharenginx/html
-            # echo "<hi> Hello this is EBS Static volumes</h1> > index.html"
-            (run the link in browser) -- #we see the message (Hello this is EBS Static volumes) 
-            #exit
-
-        (deleting the pod & run the link again)
-        -- kubectl delete pod ebs-static
-            (run the link in browser) -- #we see link fails 
-
-        (creating pod again)       
-        -- kubectl apply -f  03-ebs-dynamic.yaml  
-            (run the link in browser) -- #we see the message (Hello this is EBS Static volumes)
-        -- kubectl get pods
-        -- kubectl api resources
         -- kubectl delete -f 03-ebs-dynamic.yaml
-                        
+        -- kubectl delete -f 02-ebs-sc.yaml
+        -- delete the volume in AWS 
+        -- eksctl delete cluster --config-file=eks.yaml              
         }
 
     }   
