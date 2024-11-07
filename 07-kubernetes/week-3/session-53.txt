@@ -1,0 +1,383 @@
+                                            --------------
+                                            | KUBERNETES |  
+                                            --------------
+                                                DAY-6 (follow from youtube)
+                                            -------------		
+                                            |  CONTENT  | 
+                                            -------------
+                                            --> HPA (HorizontalPodAutoscaler)
+                                            --> Helm charts
+
+
+ Ref-session from you-tube :( https://www.youtube.com/watch?v=JgQLv5AXz0A)                                           
+============================
+HORIZONTAL POD AUTO-SCALING:
+============================
+--> When ever there is increase in app traffic ,we use HPA to scale the number of pods based on traffic 
+    conditions of (HPA):
+    ---------------------
+    1. k8-metric server Installation
+    2. mention resources and limits section in pods
+    3. Attching HPA to deployment pod of "backend" & "frontend"
+
+   
+1. k8-metric server Installation
+---------------------------------
+    -- Metrics Server collects resource metrics from Kubelets and exposes them in Kubernetes apiserver through Metrics API for use by Horizontal Pod Autoscaler and Vertical Pod Autoscaler.
+    -- Metrics API can also be accessed by "kubectl top", making it easier to debug autoscaling pipelines.
+        Steps:
+        ------
+        {
+            --> Ref-link:https://github.com/kubernetes-sigs/metrics-server
+            --> Run cmd : kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/high-availability-1.21+.yaml
+            --> git clone https://github.com/Shahul1507/expense-k8.git
+            --> cd expense-k8
+            --> kubectl apply -f namespace.yaml
+        #installing mysql
+            --> cd mysql
+            --> kubectl apply -f manifest.yaml
+            --> kubens expense 
+            --> kubectl top pods -n expense
+        }    
+        
+2. mention resources and limits section in pods
+------------------------------------------------
+    --> Assigning "resource & limits" in pods for "backend"
+    #backend configuration
+    {
+    --> In "expense-k8/backend" 
+    --> assigning resource & limits to "backend/manifest.yaml"
+
+
+            manifest.yaml
+            -------------
+            {
+                apiVersion: v1
+                kind: ConfigMap
+                metadata:
+                name: backend
+                namespace: expense
+                data:
+                DB_HOST: mysql
+                ---
+                apiVersion: apps/v1
+                kind: Deployment
+                metadata:
+                name: backend
+                namespace: expense
+                labels:
+                    app: backend
+                    tier: api
+                    project: expense
+                spec:
+                replicas: 2
+                selector:
+                    matchLabels:
+                    app: backend
+                    tier: api
+                    project: expense
+                template:
+                    metadata:
+                    labels:
+                        app: backend
+                        tier: api
+                        project: expense
+                    spec:
+                    containers:
+                    - name: backend
+                      image: joindevops/backend:v1
+                      resources:          #add
+                      requests:
+                        cpu: 100m
+                        memory: 128Mi
+                      # limits is greater than or equal to requests
+                      limits:
+                        cpu: 100m
+                        memory: 128Mi
+                      envFrom:
+                      - configMapRef:
+                        name: backend
+                ---
+                kind: Service
+                apiVersion: v1
+                metadata:
+                name: backend
+                namespace: expense
+                spec:
+                selector:
+                    app: backend
+                    tier: api
+                    project: expense
+                ports:
+                - name: backend-port
+                    protocol: TCP
+                    port: 8080 # service port
+                    targetPort: 8080 # container port     
+                            
+            }
+
+
+        (Installing k9s) -- cmd line UI
+        --> K9s provides a terminal UI to interact with your Kubernetes clusters.
+        --> Ref-Link:https://github.com/derailed/k9s 
+        --> Run cmd:
+                -- Via Webi for Linux and macOS(curl -sS https://webinstall.dev/k9s | bash)  
+        --> open a duplicate server tables
+                -- k9s # UI opens
+                -- shift: #use to check all the resources in a cluster  
+                -- services
+                -- shift:
+                -- namespaces
+                # follow the UI - top of the screen for inputs
+
+
+        (pushing to git-hub)
+        -- git add . ; git commit -m "expense-k8"; git push origin main
+    
+        (pulling to workstation)--Mobaxterm
+            -- git pull
+            -- cd ../backend
+            #installing backend
+            -- kubectl apply -f manifest.yaml  
+             # check duplicate screen ,we see backend created & cpu and memory % are seen
+
+    }
+
+    --> Assigning "resource & limits" in pods for "frontend"
+    #frontend configuration
+    {
+        --> In "expense-k8/frontend" 
+        --> assigning resource & limits to "frontend/manifest.yaml"
+    
+    
+                manifest.yaml
+                -------------
+                {
+                    apiVersion: apps/v1
+                    kind: Deployment
+                    metadata:
+                      name: frontend
+                      namespace: expense
+                      labels:
+                        app: frontend
+                        tier: web
+                        project: expense
+                    spec:
+                      replicas: 2
+                      selector:
+                        matchLabels:
+                          app: frontend
+                          tier: web
+                          project: expense
+                      template:
+                        metadata:
+                          labels:
+                            app: frontend
+                            tier: web
+                            project: expense
+                        spec:                 #add
+                          containers:
+                          - name: frontend
+                            image: joindevops/frontend:v1
+                            resources:
+                              requests:
+                                cpu: 100m
+                                memory: 128Mi
+                              # limits is greater than or equal to requests
+                              limits:
+                                cpu: 100m
+                                memory: 128Mi
+                    ---
+                    kind: Service
+                    apiVersion: v1
+                    metadata:
+                      name: frontend
+                      namespace: expense
+                    spec:
+                      type: LoadBalancer
+                      selector:
+                        app: frontend
+                        tier: web
+                        project: expense
+                      ports:
+                      - name: frontend-port
+                        protocol: TCP
+                        port: 80 # service port
+                        targetPort: 80 # container port
+
+                }
+
+            (pushing to git-hub)
+            -- git add . ; git commit -m "expense-k8"; git push origin main
+        
+            (pulling to workstation)--Mobaxterm
+                -- git pull
+                -- cd ../frontend
+                #installing frontend
+                -- kubectl apply -f manifest.yaml  
+                  # check duplicate screen ,we see frontend created & cpu and memory % are seen
+    
+    }
+3. Attching HPA to deployment pod of "backend" & "frontend"
+-----------------------------------------------------------
+    --> Till now we have used defined "replicas" in "expense-project" 
+    --> If there is increase in app traffic  -- servers will not created
+    --> To do so , (HPA-Horizontal Pods autoscaling) servers traffic can be controlled.
+    -----------------------------
+    HPA (Horizontal pod scaling) 
+    -----------------------------    
+        # HPA to Backend server
+        {
+        --> Ref-link: https://www.kubecost.com/kubernetes-autoscaling/kubernetes-hpa/#eks-example-how-to-implement-hpa-10 
+        --> In "expense-k8/backend" 
+        --> assigning HPA to "backend/manifest.yaml"
+        --> copy the example code and modify as per requirement
+                manifest.yaml
+                -------------            
+            {
+                apiVersion: autoscaling/v1
+                kind: HorizontalPodAutoscaler
+                metadata:
+                name: backend
+                namespace: expense
+                spec:
+                scaleTargetRef:
+                apiVersion: apps/v1
+                kind: Deployment
+                name: backend
+                minReplicas: 1
+                maxReplicas: 10
+                targetCPUUtilizationPercentage: 15 # usually 75 in real environment
+
+            }
+            (pushing to git-hub)
+            -- git add . ; git commit -m "expense-k8"; git push origin main
+        
+            (pulling to workstation)--Mobaxterm
+                -- git pull
+                -- cd ../backend
+                #installing backend
+                -- kubectl apply -f manifest.yaml  
+                -- kubectl get hpa         
+                # As we mentioned "min-replicas=1" in HPA,it automatically removes the extra replicas
+        }
+        # HPA to Frontend server
+        {
+        --> Ref-link: https://www.kubecost.com/kubernetes-autoscaling/kubernetes-hpa/#eks-example-how-to-implement-hpa-10 
+        --> In "expense-k8/frontend" 
+        --> assigning HPA to "frontend/manifest.yaml"
+        --> copy the example code and modify as per requirement
+        
+                manifest.yaml
+                -------------   
+                {       
+                apiVersion: autoscaling/v1
+                kind: HorizontalPodAutoscaler
+                metadata:
+                name: frontend
+                namespace: expense
+                spec:
+                scaleTargetRef:
+                apiVersion: apps/v1
+                kind: Deployment
+                name: frontend
+                minReplicas: 1
+                maxReplicas: 10
+                targetCPUUtilizationPercentage: 15 # usually 75 in real environment
+                }
+            (pushing to git-hub)
+            -- git add . ; git commit -m "expense-k8"; git push origin main
+        
+            (pulling to workstation)--Mobaxterm
+                -- git pull
+                -- cd ../frontend 
+                #installing frontend
+                -- kubectl apply -f manifest.yaml  
+                -- kubectl get hpa         
+                # As we mentioned "min-replicas=1" in HPA,it automatically removes the extra replicas
+            (k9s)
+                -- shift:hpa
+                -- shift:pods
+            (Installing apache bench for load testing)  
+            -- Ref-link:https://linuxconfig.org/how-to-install-apache-bench-on-redhat-8  
+            -- To do so,we need - "httpd-tools" package #ref thelink for cmds
+            -- sudo dnf install httpd-tools -y 
+            -- kubectl get services
+                # run the load balancer url in browser(check ports are open)
+            (load test the app with "apache bench" usage)
+            -- ab --help
+            -- ab -n 5000 -c 100 -s 120 http://url:80/    
+            (k9s)
+            -- check the traffic -- we see pods increasing
+                
+
+        }  
+
+   --> This is how we use horizontal pod autoscaling to scale the number of pods based on traffic , particularly "CPU" utilization. 
+
+
+=============
+HELM CHARTS :
+=============
+
+
+
+
+{
+
+HPA
+Helm charts
+
+Scaling
+----------
+ 1. Horizontal
+ 2. Vertical
+
+Vertical --> Only one building, downtime is there
+Horizontal --> multiple buildings, no downtime
+ 
+Server --> traffic increase
+
+Same server --> Stop the server, increase CPU and RAM then restart
+Diff servers --> number of servers increases based on traffic
+
+Percentage --> Max value (100)
+
+Containers can consume all server resources if something goes wrong. we have to mention resource requests and limits
+
+100m --> CPU
+60m --> 60%
+
+You should have metrics server installed
+You should mention resources section inside pod
+
+https://github.com/kubernetes-sigs/metrics-server#high-availability
+
+Once above things are done, we can attach HPA to deployment
+
+curl -sS https://webinstall.dev/k9s | bash
+
+Helm charts
+------------
+Helm charts is a package manager for kubernetes applications
+
+ 1. image creation --> Dockerfile
+ 2. how to run image --> Docker compose/manifest
+
+popular tools have opensource images...and opensource manifest also
+
+ 1. to templatise manifest files
+ 2. to install custom or popular applications in kubernetes like CSI drivers, metrics server, prometheru/grafana
+
+
+
+helm install <chart-name> . --> . represents there is Chart.yaml in current folder
+
+helm repo add aws-ebs-csi-driver https://kubernetes-sigs.github.io/aws-ebs-csi-driver
+
+helm repo update
+Install the latest release of the driver.
+helm upgrade --install aws-ebs-csi-driver \
+    --namespace kube-system \
+    aws-ebs-csi-driver/aws-ebs-csi-driver
+}

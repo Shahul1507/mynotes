@@ -25,8 +25,8 @@ SETS :
 (1.Replica-set)  
 ----------------
    -- As far we have created only "sigle-pod"
-   -- If there is a requirement of "multi-pods" - we use --> (replica-sets)
-   -- It(replica-sets) makes sure desired number of pods running all the time.
+   -- If there is a requirement of "multi-pods" - we use --> (sets)
+   -- (replica-sets) makes sure desired number of pods running all the time.
    -- we cannot select names to pod in "replica-sets" if there are multi-pods.
 
    (Dis-advantages of Replica-set)
@@ -267,7 +267,7 @@ SETS :
 
 --> "deployment" is done , "replicaset" is created & "replicaset" creates the "pods"
 --> When "Image-version" is updated 
-	-- deployment happens , which creates "replica-set" and pods are 	
+	-- deployment happens , which creates "replica-set" and pods are created	
 =======================================================
 --> Deployment --> replica-set --> pod --> containers  |	
 =======================================================

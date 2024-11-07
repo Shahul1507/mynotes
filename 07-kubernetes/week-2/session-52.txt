@@ -12,7 +12,8 @@
                                         --> Statefulset
                                         --> Headless Service
                                         --> Expense Project 
-                                            -- using EBS and Statfulset 
+                                            -- using EBS and Statfulset (mysql)
+
                                                 
 
 
@@ -480,19 +481,27 @@ CREATING DYNAMIC-EFS  |
 =============
 STATEFUL-SET
 =============
+--> we know ,MySQL is a stateful application
+--> In Kubernetes ,
+    -- we have "statefulset" used for "DB" related applications
+    -- where as "Deployment" used for "stateless" applications     
+--> As , every "set" has a "service" linked like(cluster-ip,node-port,load-balancer)
+--> "statefulset"  has a "service" called - (Headless-service )  with out cluster-ip 
+
+
 ================
 HEADLESS-SERVICE
 ================
-what is headless service?
-headless service will not have cluster IP, if anyone does nslookup on headless service it will give all end points
+
+--> Headless service will not have cluster IP, if anyone does nslookup on headless service it will give all end points
 
 
 ======================
 EXPENSE - PROJECT  - (using EBS and Stateful-set)
 ======================
--------
-MySQL
--------
+=======
+MySQL  |
+=======
 {
 Steps:
     1. create expense namespace
@@ -696,7 +705,7 @@ Steps:
                 -- kubectl get pv,pvc  
                    # 2 volumes are created 
                    # check aws-volumes (2 "1gib are created") 
-                -- kubectl grt svc
+                -- kubectl gett svc
                    # mysql-headless is present
                 -- kubectl exec -it mysql-0 -n expense -- bash   
                    # cat /etc/*release -- oracle OS
@@ -704,6 +713,14 @@ Steps:
                    # microdnf install -y bind-utils
                    # nslookup mysql-headless
                    (we see pod IP_address)
+                    nslookup mysql-headless
+                    Server:         10.100.0.10
+                    Address:        10.100.0.10#53
+
+                    Name:   mysql-headless.expense.svc.cluster.local
+                    Address: 192.168.0.57
+                    Name:   mysql-headless.expense.svc.cluster.local
+                    Address: 192.168.10.99
                    # exit
                 
 
@@ -712,86 +729,271 @@ Steps:
     --> with headless-service & stateful-set 
         -- when "nslook-up" is done - we get "pod_IP"    
     }  
-    -- kubectl delete statefulset mysql   
-    -- kubectl delete -f manifest.yaml
-    -- kubectl delete -f 02-ebs-sc.yaml
-    -- delete the volume in AWS 
-    -- eksctl delete cluster --config-file=eks.yaml 
-}  
---------
-Backend
---------
+
+}
+========
+BACKEND |
+========  
+{   
+(Creating "BACKEND")  
+
+--> creating "backend" folder in "k8-expense-volumes"
+--> creating "configmap" to "backend"
+--> creating "manifest.yaml" file in "backend" folder 
+--> creating "service" to "backend"
+
+( creating "configMap" to backend)
+    --> Ref link for code -(https://kubernetes.io/docs/concepts/configuration/configmap/ )
+    --> copy the "configMap" syntax-code in "manifest.yaml" file
+    {
+        manifest.yaml
+        -------------
+        apiversion: v1
+        kind: configMap
+        metadata:
+          name: backend
+          namespace: expense
+        data:
+          DB_HOST: mysql
+    }
+( creating "deployment-set" to "backend")
+    --> Ref link for code -- (https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)
+    --> copy the "deployment" syntax-code in "manifest.yaml" file
+    {
+        manifest.yaml
+        -------------- 
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: backend
+          namespace: expense
+          labels:
+            app: backend
+            tier: api
+            project: expense
+        spec:
+          replicas: 2
+          selector:
+            matchLabels:
+              app: backend
+              tier: api
+              project: expense
+          template:
+            metadata:
+              labels:
+                app: backend
+                tier: api
+                project: expense
+            spec:
+              containers:
+              - name: backend
+                image: joindevops/backend:v1
+                envFrom:
+                - configMapRef:
+                    name: backend
+         
+    }   
+    
+( creating "service" to "backend")
+    --> Ref link for code -- (https://kubernetes.io/docs/concepts/services-networking/service/)
+    --> copy the "service" syntax-code in "manifest.yaml" file
+    {
+        manifest.yaml
+        -------------- 
+        kind: Service
+        apiVersion: v1
+        metadata:
+          name: backend
+          namespace: expense
+        spec:
+          selector:
+            app: backend
+            tier: api
+            project: expense
+          ports:
+          - name: backend-port
+            protocol: TCP
+            port: 8080 # service port
+            targetPort: 8080 # container port    
+    
+    (pushing to git-hub)
+    -- git add . ; git commit -m "expense-k8"; git push origin main
+
+    (pulling to workstation)--Mobaxterm
+        -- git pull
+        -- cd ../backend
+        -- kubectl apply -f manifest.yaml  
+        -- kubectl get pods -n expense
+        -- kubectl get svc -n expense
+        -- kubectl logs <pod-name> -n expense 
+    } 
+
+( Install kubens )   
+    {
+        --> open-link: (https://github.com/ahmetb/kubectx) 
+        --> run below 3 links: (under ec2-user)
+            -- sudo git clone https://github.com/ahmetb/kubectx /opt/kubectx
+            -- sudo ln -s /opt/kubectx/kubectx /usr/local/bin/kubectx
+            -- sudo ln -s /opt/kubectx/kubens /usr/local/bin/kubens   
+    }
+
+( creating "debug" to "backend")    
+
+    {
+       --> create a pod with name "manifest.yaml"
+       --> copy "02-pod.yaml" to "manifest.yaml"
+
+                manifest.yaml
+                -------------
+                apiVersion: v1
+                kind: Pod
+                metadata:
+                  name: debug
+                  namespace: expense
+                spec:
+                  containers:
+                  - name: debug
+                    image: joindevops/debug:v1
+        (pushing to git-hub)
+           -- cd ../expense-k8
+           -- git add . ; git commit -m "expense-k8"; git push origin main
+    
+        (pulling to workstation)--Mobaxterm
+            -- git pull
+            -- cd ../debug
+            -- kubectl apply -f manifest.yaml  # pod debug is created
+            -- kubectl get pods -n expense
+            -- kubectl exec -it debug -n expense -- bash
+               # telnet mysql 3306 
+               # telnet backend 8080
+               # curl http://backend:8080/health
+               # exit
+        
+
+                 
+    }
+}
+
+=========
+FRONTEND |
+=========
 {
-    --> Backend "manifest.yaml"
-}
+  
+    (Creating "BACKEND")  
+    --> creating "frotend" folder in "k8-expense-volumes"
+    --> creating "manifest.yaml" file in "frontend" folder 
+    --> creating "service" to "frontend"   
 
-{                                            
-EFS
-----------
-elastic file system
+    ( creating "deployment-set" to "frontend")
+    --> Ref link for code -- (https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)
+    --> copy the "deployment" syntax-code in "manifest.yaml" file
+    {
+        manifest.yaml
+        -------------- 
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: frontend
+          namespace: expense
+          labels:
+            app: frontend
+            tier: web
+            project: expense
+        spec:
+          replicas: 2
+          selector:
+            matchLabels:
+              app: frontend
+              tier: web
+              project: expense
+          template:
+            metadata:
+              labels:
+                app: frontend
+                tier: web
+                project: expense
+            spec:
+              containers:
+              - name: frontend
+                image: joindevops/frontend:v1
+         
+    }   
+    
+( creating "service" to "frontend")
+    --> Ref link for code -- (https://kubernetes.io/docs/concepts/services-networking/service/)
+    --> copy the "service" syntax-code in "manifest.yaml" file
+    {
+        manifest.yaml
+        -------------- 
+        kind: Service
+        apiVersion: v1
+        metadata:
+          name: frontend
+          namespace: expense
+        spec:
+          selector:
+            type: LoadBalancer #add
+            app: frontend
+            tier: web
+            project: expense
+          ports:
+          - name: frontend-port
+            protocol: TCP
+            port: 80 # service port
+            targetPort: 80 # container port   
 
-1. EBS is block store, EFS is like NFS(Network file system)
-2. EBS should be as near as possible. EFS can be anywhere in network
-3. EBS is fast compared to EFS
-4. EBS we can store OS, Databases. EFS is not good OS and DB
-5. EFS can increase storage limit automatiaclly.
-6. Files are stored in EFS.
+    (pushing to git-hub)
+        -- git add . ; git commit -m "expense-k8"; git push origin main
 
-1. create EFS volume
-2. install drivers and allow 2049 traffic from EKS worker nodes
-3. give permision to EKS nodes
-4. create PV
-5. create PVC
-6. claim through pod using PVC
-7. open node port in EKS worker nodes
+    (pulling to workstation)--Mobaxterm
+        -- git pull
+        -- cd ../frontend
+        -- kubectl apply -f manifest.yaml  
+        -- kubectl get pods -n expense
+        -- kubectl get svc -n expense
+        -- kubectl logs <pod-name> -n expense 
+           # we see,
+             -- mysql,backend,frontend -> running 
+             -- we see load balancer "url"
+    } 
 
-kubectl kustomize \
-    "github.com/kubernetes-sigs/aws-efs-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-2.1" > public-ecr-driver.yaml
+    --> aws - loadbalancers -- url is present
 
-aws eks --region us-east-1 update-kubeconfig --name expense
+(allowing traffic in security-groups)
 
-EFS SG should allow traffic on 2049 from the SG attached EKS worker nodes.
+    --> aws - security-groups - edit inbound rules
+        -- type: all traffic
+        -- source: anywhere(0.0.0.0/0)
+        -- save rules
+    --> run the url with "http" in browser
+    --> check expense-app #make sure its running
 
-1. storage class create
+(Now adding "url" to "route-53"- hostedzones)   
+    --> route-53 - hostedzones - shahul.online - create record 
+        -- Record name: shahul.online
+        -- Record type : A
+        -- load balancer
+        -- us-east-1
+        -- load balancer url
+        -- save
+    --> login with "shahul.online"  in browser  
+    --> check expense-app #make sure its running 
+         
 
-Expense
-------------
-mysql is a stateful application
-
-statefulset vs deployment
------------------------------
-statefulset is for DB related applications.
-deployment is for stateless applications.
-
-statefulset will have headless service along with normal service. statefulset requires pv and pvc objects.
-deployment will not have headless service. 
-
-statefulset pods will be created in orderly manner. 
-statefulset will keep its pod identity. Pod names will created as -0, -1, -2, etc.
-
-nslookup nginx -> all end points
-
-what is headless service?
-headless service will not have cluster IP, if anyone does nslookup on headless service it will give all end points
+} 
+    
+After project is executed - delete all resources
+-- kubectl delete statefulset mysql   
+-- kubectl delete -f manifest.yaml
+-- kubectl delete -f 02-ebs-sc.yaml
+-- delete the volume in AWS 
+-- eksctl delete cluster --config-file=eks.yaml  
 
 
-1. create expense namespace
-2. install ebs drivers
-kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-1.36"
-3. create ebs sc
 
-4. give eks nodes ebs permission
-5. create pvc, create statefulset
 
-nslookup mysql-headless
-Server:         10.100.0.10
-Address:        10.100.0.10#53
 
-Name:   mysql-headless.expense.svc.cluster.local
-Address: 192.168.0.57
-Name:   mysql-headless.expense.svc.cluster.local
-Address: 192.168.10.99
-}
+
 
 
 INETRVIEW
@@ -808,5 +1010,103 @@ deployment will not have headless service.
 statefulset pods will be created in orderly manner. 
 statefulset will keep its pod identity. Pod names will created as -0, -1, -2, etc.
 
-2. what is headless-service ? why its is used 
-------------------------------------------------
+2. what is headless-service ? 
+-----------------------------
+A)
+-- Headless service will not have cluster IP attached 
+-- If anyone does "nslookup" on "headless-service"& "stateful-set" it will give "pod_ip"
+ 
+    {
+    nslookup mysql-headless
+    Server:         10.100.0.10
+    Address:        10.100.0.10#53
+
+    Name:   mysql-headless.expense.svc.cluster.local
+    Address: 192.168.0.57
+    Name:   mysql-headless.expense.svc.cluster.local
+    Address: 192.168.10.99
+    }
+-- If anyone does "nslookup" on "Normal-service"& "deployment-set" it will give "cluster_ip"
+
+3. why Headless-service is used ?
+---------------------------------
+A)
+-- Headless-service is used for "data replications" of all the "worker-nodes" in a "cluster" 
+-- In short, all nodes are mutually connected through pod "IP_addresses" fot "data-replications"
+
+    For an Instance:
+    ----------------
+    -- If "CRUD" happens in "DB" related applications of any "worker-node-1" in a "cluster" 
+    -- "worker-node-1" informs all other "worker-nodes" through "nslookup headless-service"
+    -- so that it can find all pod "IP_address" of other nodes and inform . 
+
+
+
+{                                            
+  EFS
+  ----------
+  elastic file system
+  
+  1. EBS is block store, EFS is like NFS(Network file system)
+  2. EBS should be as near as possible. EFS can be anywhere in network
+  3. EBS is fast compared to EFS
+  4. EBS we can store OS, Databases. EFS is not good OS and DB
+  5. EFS can increase storage limit automatiaclly.
+  6. Files are stored in EFS.
+  
+  1. create EFS volume
+  2. install drivers and allow 2049 traffic from EKS worker nodes
+  3. give permision to EKS nodes
+  4. create PV
+  5. create PVC
+  6. claim through pod using PVC
+  7. open node port in EKS worker nodes
+  
+  kubectl kustomize \
+      "github.com/kubernetes-sigs/aws-efs-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-2.1" > public-ecr-driver.yaml
+  
+  aws eks --region us-east-1 update-kubeconfig --name expense
+  
+  EFS SG should allow traffic on 2049 from the SG attached EKS worker nodes.
+  
+  1. storage class create
+  
+  Expense
+  ------------
+  mysql is a stateful application
+  
+  statefulset vs deployment
+  -----------------------------
+  statefulset is for DB related applications.
+  deployment is for stateless applications.
+  
+  statefulset will have headless service along with normal service. statefulset requires pv and pvc objects.
+  deployment will not have headless service. 
+  
+  statefulset pods will be created in orderly manner. 
+  statefulset will keep its pod identity. Pod names will created as -0, -1, -2, etc.
+  
+  nslookup nginx -> all end points
+  
+  what is headless service?
+  headless service will not have cluster IP, if anyone does nslookup on headless service it will give all end points
+  
+  
+  1. create expense namespace
+  2. install ebs drivers
+  kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-1.36"
+  3. create ebs sc
+  
+  4. give eks nodes ebs permission
+  5. create pvc, create statefulset
+  
+  nslookup mysql-headless
+  Server:         10.100.0.10
+  Address:        10.100.0.10#53
+  
+  Name:   mysql-headless.expense.svc.cluster.local
+  Address: 192.168.0.57
+  Name:   mysql-headless.expense.svc.cluster.local
+  Address: 192.168.10.99
+}
+          

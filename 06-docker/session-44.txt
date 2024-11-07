@@ -62,7 +62,7 @@ DOCKER FILE INSTRUCTIONS
                     CMD ["ping","google.com"]          
                   }
            
-  -- git clone "docker-files"-(git add . ; git commit -m "docker"; git push origin main) in bash 
+    -- git clone "docker-files"-(git add . ; git commit -m "docker"; git push origin main) in bash 
     -- git pull https://github.com/Shahul1507/docker-files.git  
     -- cd ENTRYPOINT
     -- run the cmd - (docker build -t entry:v1 .) 

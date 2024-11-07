@@ -34,7 +34,7 @@ DOCKER NETWORKING :
                         -- mysql --> 3306 --> host port
                         -- backend --> 8080 --> host port
                         -- frontend --> 80 --> host port
-
+      {
       --> Creating "Expense-project" with "host-network"
             ---------------------------------------------
             1.Install docker
@@ -112,11 +112,11 @@ DOCKER NETWORKING :
             ---------------
             --> No isolated network in "host-network" i.e., no security
             --> because in host-network - we have all post ports
-            
+      }      
       --------------
       Bridge network:
       --------------    
-            
+      {      
       --> Creating "Expense-project" with "bridge-network" (for an Isolated-network)
             ----------------------------------------------- 
             1. creating docker network
@@ -145,6 +145,19 @@ DOCKER NETWORKING :
                         -- docker ps   #containers are running
                         -- docker logs backend # "msg": "app started on port 8080 "
             }
+            
+            {   --> Debug -- (telnet for backend)
+                       
+                        -- cd../Debug
+                        -- docker build -t debug:v1
+                        -- docker run -d debug:v1
+                        -- docker ps
+                        -- docker exec -it debug -- bash
+                           # telnet mysql 3306 -- connected
+                           # telnet backend 8080 -- connected
+                           # curl http://backend/health
+                           #exit
+            }
             {   --> Frontend -- (creating Frontend container)
                   
                         -- change "nginx.conf" 
@@ -167,13 +180,30 @@ DOCKER NETWORKING :
                         -- check public_ip in browser # expense app running
                         -- docker rm -f 'docker ps -a -q'   
             }
-
+      }      
+   
       ----------------
       Over-lay network:
       ----------------
 
-      --> overlay network : Connecting "two containers" in different "hosts" using modem between "two-hosts"
-      --> keeping multiple docker is risky -- we need some orchestration.
+            --> overlay network : Connecting "two containers" in different "hosts" using modem between "two-hosts"
+            --> keeping multiple docker is risky -- we need some orchestration.
+
+      Push the generated images to the docker hub
+      --------------------------------------------
+      -- docker images
+      -- docker login -u shahuldoc (login to docker hub)
+         # Enter the password
+      (Tagging the image name)
+      -- docker tag mysql:v1 shahuldoc/mysql:v1
+      -- docker tag backend:v1 shahuldoc/backend:v1
+      -- docker tag debug:v1 shahuldoc/debug:v1
+      -- docker tag frontend:v1 shahuldoc/frontend:v1
+      (Pushing the image to docker-hub)
+      -- docker push shahuldoc/mysql:v1
+      -- docker push shahuldoc/backend:v1
+      -- docker push shahuldoc/debug:v1
+      -- docker push shahuldoc/frontend:v1
 }
 ================
 DOCKER VOLUMES :
@@ -271,7 +301,49 @@ DOCKER VOLUMES :
 DOCKER COMPOSE :
 ================
 Docker compose is a tool for defining and running multi-container applications.
+docker template: https://gist.github.com/obiknows/edb19c3a17c68a427e7cd1ba9bae2c17
 
+Expense-docker with (DOCKER COMPOSE)
+--------------------------------------
+      -- create "docker-compose.yaml" filr in "expense-docker"
+      { -- docker-compose.yaml
+            -------------------
+            version: "3"
+            networks:
+              expense:
+            volumes:
+              mysql:  # docker volume create mysql
+            services:
+              mysql:
+                image: shahuldoc/mysql:v1
+                container_name: mysql # --name mysql
+                volumes:
+                - mysql:/var/lib/mysql # -v mysql:/var/lib/mysql
+              backend:
+                image: shahuldoc/backend:v1
+                container_name: backend
+                command: sh -c "sleep 5 && node /opt/server/index.js"
+                depends_on:
+                - mysql
+              frontend:
+                image: shahuldoc/frontend:v1
+                container_name: frontend
+                ports:
+                - 80:80
+                depends_on:
+                - backend
+
+      (pushing to git-hub)
+      -- git add . ; git commit -m "expense-docker"; git push origin main 
+      (pulling to workstation)--Mobaxterm
+		-- git pull 
+            -- docker compose up -d # create all containers
+            -- docker ps # we can see all containers - mysql , backend , frontend are created
+               -- run the "public_ip" for expense app
+            -- docker compose down # to delete all conatiners  
+               -- run the "public_ip" for expense app
+               -- old data is still present
+      }         
 Advantages:
 -----------
 --> can manage the services with dependecies
