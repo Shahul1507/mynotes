@@ -8,8 +8,12 @@
                                             --> HPA (HorizontalPodAutoscaler)
                                             --> Helm charts
 
-
- Ref-session from you-tube :( https://www.youtube.com/watch?v=JgQLv5AXz0A)                                           
+REFERENCES:
+-----------
+ Ref-session from you-tube :( https://www.youtube.com/watch?v=JgQLv5AXz0A) 
+ helm cheat-sheet : (https://helm.sh/docs/intro/cheatsheet/) 
+ 
+ 
 ============================
 HORIZONTAL POD AUTO-SCALING:
 ============================
@@ -19,8 +23,8 @@ HORIZONTAL POD AUTO-SCALING:
     1. k8-metric server Installation
     2. mention resources and limits section in pods
     3. Attching HPA to deployment pod of "backend" & "frontend"
-
-   
+{
+---------------------------------   
 1. k8-metric server Installation
 ---------------------------------
     -- Metrics Server collects resource metrics from Kubelets and exposes them in Kubernetes apiserver through Metrics API for use by Horizontal Pod Autoscaler and Vertical Pod Autoscaler.
@@ -39,7 +43,7 @@ HORIZONTAL POD AUTO-SCALING:
             --> kubens expense 
             --> kubectl top pods -n expense
         }    
-        
+------------------------------------------------        
 2. mention resources and limits section in pods
 ------------------------------------------------
     --> Assigning "resource & limits" in pods for "backend"
@@ -218,6 +222,7 @@ HORIZONTAL POD AUTO-SCALING:
                   # check duplicate screen ,we see frontend created & cpu and memory % are seen
     
     }
+----------------------------------------------------------    
 3. Attching HPA to deployment pod of "backend" & "frontend"
 -----------------------------------------------------------
     --> Till now we have used defined "replicas" in "expense-project" 
@@ -309,17 +314,229 @@ HORIZONTAL POD AUTO-SCALING:
             -- ab -n 5000 -c 100 -s 120 http://url:80/    
             (k9s)
             -- check the traffic -- we see pods increasing
-                
-
+            
         }  
+           -- kubectl delete -f manifest.yaml #frontend
+           -- cd../backend
+           -- kubectl delete -f manifest.yaml # backend 
+           -- cd../mysql
+           -- kubectl delete -f manifest.yaml # mysql
 
-   --> This is how we use horizontal pod autoscaling to scale the number of pods based on traffic , particularly "CPU" utilization. 
-
+- This is how we use horizontal pod autoscaling to scale the number of pods based on traffic , particularly "CPU" utilization. 
+}
 
 =============
 HELM CHARTS :
 =============
+-->helm cheat-sheet : (https://helm.sh/docs/intro/cheatsheet/)
+-->What is Helm charts?
+   -- Helm charts is package manager for kubernetes applications
+   -- Helm are used for:
+     --------------------
+       1. to templatise manifest files
+       2. to install custom or popular applications in kubernetes like (CSI drivers, metrics server, prometheru/grafana)
+{
+----------------------------------
+1. to templatise manifest files
+---------------------------------- 
+    --> (Install helm)
+        --------------
+        {
+          -- Ref-link: https://helm.sh/docs/intro/install/
+          -- run the commands from the link  (work-station)
+            -- curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+            -- chmod 700 get_helm.sh
+            -- ./get_helm.sh
+        }
+    --> (Installing nginx using helm)
+        ------------------------------
+        {
+          -- create a folder "helm-expense" in local
+          -- create a repo "helm-expense" in git-hub
+             -- cd helm-expense #bash
+             -- git init
+             -- git branch -M main
+             -- git remote add origin https://github.com/Shahul1507/helm-expense.git
+          -- create a folder "nginx" in "helm-expense"
+          -- create a file "chart.yaml" in "nginx"
+            {
+                chart.yaml
+                ----------
+                apiVersion: v1
+                name: nginx
+                version: 0.0.1
+                description: This chart is to manage nginx application
+            }    
+          -- create a file "value.yaml" in "nginx" 
+            {
+                value.yaml
+                ----------
+                deployment:
+                    imageVersion: latest
+                    replicas: 2 
+                service:
+                    port: 80
+                    type: LoadBalancer
 
+            }            
+          -- create a folder "templates"  in "nginx"
+          -- create a file "deployment.yaml" in "nginx"
+            {
+                deployment.yaml
+                ---------------
+                apiVersion: apps/v1
+                kind: Deployment
+                metadata:
+                  name: nginx
+                  labels: # these are replicaset labels
+                    app: nginx
+                    tier: frontend
+                spec:
+                  # modify replicas according to your case
+                  replicas: {{ .Values.deployment.replicas }}
+                  selector:
+                    # these are used to select the pod to create replicas
+                    matchLabels:
+                      tier: frontend
+                      app: nginx
+                  # this is pod definition
+                  template:
+                    metadata:
+                      # these labels belongs to pod
+                      labels:
+                        tier: frontend
+                        app: nginx
+                    spec:
+                      containers:
+                      - name: nginx
+                        # this is called as placeholder
+                        image: nginx:{{ .Values.deployment.imageVersion }}                
+            } 
+          -- create a file "service.yaml" in nginx
+            {
+                service.yaml
+                ------------
+                kind: Service
+                apiVersion: v1
+                metadata:
+                  name: nginx
+                spec:
+                  type: {{ .Values.service.type }}
+                  selector:
+                    tier: frontend
+                    app: nginx
+                  ports:
+                  - name: nginx-svc-port
+                    protocol: TCP
+                    port: {{ .Values.service.port }} # service port
+                    targetPort: 80 # container port                
+            }
+
+        (pushing to git-hub)
+            -- git add . ; git commit -m "helm-expense"; git push origin main
+    
+        (pulling to workstation)--Mobaxterm
+            -- git clone https://github.com/Shahul1507/helm-expense.git
+            -- cd helm-expense
+            -- cd nginx
+            -- ls-l 
+            # syntax: helm install <chart-name> .
+            # Dot (.) represents thers is "chart.yaml" in current folder
+            -- helm install nginx . 
+            -- helm list   
+            -- helm history nginx #revision-1
+        }
+    --> (If version name is changed to "stable-perl")
+        ---------------------------------------------
+        {
+            -- modify the "chart.yaml"
+            {
+                chart.yaml
+                ----------
+                apiVersion: v1
+                name: nginx
+                version: 0.0.2
+                description: This chart is to manage nginx application
+            } 
+            -- modify the "value.yaml"
+            {
+                value.yaml
+                ----------
+                deployment:
+                    imageVersion: stable-perl
+                    replicas: 4
+                service:
+                    port: 80
+                    type: LoadBalancer
+
+            }  
+            (pushing to git-hub)
+            -- git add . ; git commit -m "helm-expense"; git push origin main
+        
+            (pulling to workstation)--Mobaxterm
+                -- git pull
+                -- helm upgrade nginx . 
+                -- helm list # image version updated
+                -- helm history nginx #revision-2
+            (k9s)
+                -- shift:pods #we see 4 replicas
+        }
+    --> (If version name is changed to "alpine")
+        -----------------------------------------
+        {
+            -- modify the "chart.yaml"
+            {
+                chart.yaml
+                ----------
+                apiVersion: v1
+                name: nginx
+                version: 0.0.3
+                description: This chart is to manage nginx application
+            } 
+            -- modify the "value.yaml"
+            {
+                value.yaml
+                ----------
+                deployment:
+                    imageVersion: alpine
+                    replicas: 3
+                service:
+                    port: 80
+                    type: LoadBalancer
+
+            }  
+            (pushing to git-hub)
+            -- git add . ; git commit -m "helm-expense"; git push origin main
+        
+            (pulling to workstation)--Mobaxterm
+                -- git pull
+                -- helm upgrade nginx . 
+                -- helm list # image version updated
+                -- helm history nginx #revision-3
+            (k9s)
+                -- shift:pods #we see 4 replicas       
+        }
+    --> (If there is revision failure)-- we have rollback
+        {
+        -- roll-back to previous-version 
+            -- helm rollback nginx
+            -- helm history nginx #revision-4
+               # we see version roll back to version 0.0.2
+        - #(syntax to rollback to particular version -- helm rollback <release> <revision>) 
+            -- helm rollback nginx 1 
+            -- helm rollback history #rollback to version-0.0.1  
+        (k9s)
+            -- shift:pods #2replicas
+        (uninstall nginx)
+            -- helm uninstall nginx    
+        }
+- this is how we templatise manifest files  
+        
+}                
+
+--------------------------
+2. Installing CSI drivers
+--------------------------
 
 
 
@@ -381,3 +598,4 @@ helm upgrade --install aws-ebs-csi-driver \
     --namespace kube-system \
     aws-ebs-csi-driver/aws-ebs-csi-driver
 }
+
