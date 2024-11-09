@@ -7,6 +7,7 @@
                                             -------------
                                             --> HPA (HorizontalPodAutoscaler)
                                             --> Helm charts
+                                                -- Expense-project (using helm-chart)
 
 REFERENCES:
 -----------
@@ -563,9 +564,10 @@ HELM CHARTS :
 -----------------
 EXPENSE-PROJECT | -- (Using Helm-charts)
 -----------------
--------
+--------
 - MySQL
--------
+--------
+{
    -- create a folder "mysql" in "helm-expense"
    -- create a file "chart.yaml" in "mysql" folder
      {
@@ -635,10 +637,11 @@ EXPENSE-PROJECT | -- (Using Helm-charts)
              targetPort: 3306 # container port        
            
      }
-
+}
 ----------
 - Backend
 ----------
+{
 -- create a folder "backend" in "helm-expense"
 -- create a file "chart.yaml" in "backend" folder
     {
@@ -742,6 +745,8 @@ EXPENSE-PROJECT | -- (Using Helm-charts)
              
         
     }     
+}
+
 
 {
 
