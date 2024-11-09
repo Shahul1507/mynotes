@@ -335,10 +335,11 @@ HELM CHARTS :
      --------------------
        1. to templatise manifest files
        2. to install custom or popular applications in kubernetes like (CSI drivers, metrics server, prometheru/grafana)
-{
+
 ----------------------------------
 1. to templatise manifest files
 ---------------------------------- 
+{
     --> (Install helm)
         --------------
         {
@@ -367,9 +368,9 @@ HELM CHARTS :
                 version: 0.0.1
                 description: This chart is to manage nginx application
             }    
-          -- create a file "value.yaml" in "nginx" 
+          -- create a file "values.yaml" in "nginx" 
             {
-                value.yaml
+                values.yaml
                 ----------
                 deployment:
                     imageVersion: latest
@@ -517,6 +518,7 @@ HELM CHARTS :
                 -- shift:pods #we see 4 replicas       
         }
     --> (If there is revision failure)-- we have rollback
+        --------------------------------------------------
         {
         -- roll-back to previous-version 
             -- helm rollback nginx
@@ -528,17 +530,218 @@ HELM CHARTS :
         (k9s)
             -- shift:pods #2replicas
         (uninstall nginx)
-            -- helm uninstall nginx    
+            -- helm uninstall nginx  
+        (k9s)
+            -- shift:pods #all the pods deleted              
+
         }
 - this is how we templatise manifest files  
         
 }                
 
---------------------------
-2. Installing CSI drivers
---------------------------
+--------------------------------------
+2. Installing CSI drivers application 
+--------------------------------------
+{
+--> helm-link: https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/docs/install.md#helm
+    --Helm
+       - Add the aws-ebs-csi-driver Helm repository.
+         -- helm repo add aws-ebs-csi-driver https://kubernetes-sigs.github.io/aws-ebs-csi-driver
+         -- helm repo list #we see the repo list
+         -- helm repo update #checks and updates to latest version
+       - Install the latest release of the driver.
+         -- helm upgrade --install aws-ebs-csi-driver \
+                --namespace kube-system \
+                aws-ebs-csi-driver/aws-ebs-csi-driver
+         -- kubectl get pods -n kube-system # we see all the csi drivers       
+       - Uninstall the csi drivers
+         -- helm uninstall aws-ebs-csi-driver - n kube-system
+         -- helm list -n kube-system
+         
+}
+
+-----------------
+EXPENSE-PROJECT | -- (Using Helm-charts)
+-----------------
+-------
+- MySQL
+-------
+   -- create a folder "mysql" in "helm-expense"
+   -- create a file "chart.yaml" in "mysql" folder
+     {
+         chart.yaml
+         ----------
+         apiVersion: v1
+         name: mysql
+         version: 0.0.1
+         description: This chart is to manage mysql application
+     }    
+   -- create a file "values.yaml" in "mysql" folder 
+     {
+         values.yaml
+         ----------
+         deployment:
+             imageVersion: v1
 
 
+     }            
+   -- create a folder "templates"  in "mysql" folder
+   -- create a file "manifest.yaml" in "templates" folder
+     {
+         manifest.yaml
+         ---------------
+         apiVersion: apps/v1
+         kind: Deployment
+         metadata:
+           name: mysql
+           namespace: expense
+           labels:
+             app: mysql
+             tier: db
+             project: expense
+         spec:
+           replicas: 1
+           selector:
+             matchLabels:
+               app: mysql
+               tier: db
+               project: expense
+           template:
+             metadata:
+               labels:
+                 app: mysql
+                 tier: db
+                 project: expense
+             spec:
+               containers:
+               - name: mysql
+                 image: joindevops/mysql:{{ .Values.deployment.imageVersion }}
+         
+         ---
+         kind: Service
+         apiVersion: v1
+         metadata:
+           name: mysql
+           namespace: expense
+         spec:
+           selector:
+             app: mysql
+             tier: db
+             project: expense
+           ports:
+           - name: mysql-port
+             protocol: TCP
+             port: 3306 # service port
+             targetPort: 3306 # container port        
+           
+     }
+
+----------
+- Backend
+----------
+-- create a folder "backend" in "helm-expense"
+-- create a file "chart.yaml" in "backend" folder
+    {
+        chart.yaml
+        ----------
+        apiVersion: v1
+        name: backend
+        version: 0.0.1
+        description: This chart is to manage backend application
+    }    
+-- create a file "values.yaml" in "backend" folder 
+    {
+        values.yaml
+        ----------
+        deployment:
+            imageVersion: v1
+        hpa:
+            cpuUtilization: 20  
+
+    }            
+-- create a folder "templates"  in "mysql" folder
+-- create a file "manifest.yaml" in "templates" folder
+    {
+        manifest.yaml
+        ---------------
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: backend
+          namespace: expense
+        data:
+          DB_HOST: mysql
+        ---
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: backend
+          namespace: expense
+          labels:
+            app: backend
+            tier: api
+            project: expense
+        spec:
+          replicas: 2
+          selector:
+            matchLabels:
+              app: backend
+              tier: api
+              project: expense
+          template:
+            metadata:
+              labels:
+                app: backend
+                tier: api
+                project: expense
+            spec:
+              containers:
+              - name: backend
+                image: joindevops/backend:{{ .Values.deployment.imageVersion }}
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 128Mi
+                  # limits is greater than or equal to requests
+                  limits:
+                    cpu: 100m
+                    memory: 128Mi
+                envFrom:
+                - configMapRef:
+                    name: backend
+        ---
+        kind: Service
+        apiVersion: v1
+        metadata:
+          name: backend
+          namespace: expense
+        spec:
+          selector:
+            app: backend
+            tier: api
+            project: expense
+          ports:
+          - name: backend-port
+            protocol: TCP
+            port: 8080 # service port
+            targetPort: 8080 # container port     
+        ---
+        apiVersion: autoscaling/v1
+        kind: HorizontalPodAutoscaler
+        metadata:
+         name: backend
+         namespace: expense
+        spec:
+         scaleTargetRef:
+           apiVersion: apps/v1
+           kind: Deployment
+           name: backend
+         minReplicas: 1
+         maxReplicas: 10
+         targetCPUUtilizationPercentage: {{ .Values.hpa.cpuUtilization }} # usually 75 in real environment    
+             
+        
+    }     
 
 {
 
