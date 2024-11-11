@@ -1,7 +1,7 @@
                                             --------------
                                             | KUBERNETES |  
                                             --------------
-                                                DAY-6 (follow from youtube)
+                                                DAY-6 
                                             -------------		
                                             |  CONTENT  | 
                                             -------------
@@ -11,7 +11,6 @@
 
 REFERENCES:
 -----------
- Ref-session from you-tube :( https://www.youtube.com/watch?v=JgQLv5AXz0A) 
  helm cheat-sheet : (https://helm.sh/docs/intro/cheatsheet/) 
  
  
@@ -746,6 +745,141 @@ EXPENSE-PROJECT | -- (Using Helm-charts)
         
     }     
 }
+-----------
+- Frontend
+-----------
+{
+-- create a folder "frontend" in "helm-expense"
+-- create a file "chart.yaml" in "frontend" folder
+    {
+        chart.yaml
+        ----------
+        apiVersion: v1
+        name: frontend
+        version: 0.0.1
+        description: This chart is to manage frontend application
+    }    
+-- create a file "values.yaml" in "frontend" folder 
+    {
+        values.yaml
+        ----------
+        deployment:
+          replicas: 2
+          imageVersion: v1
+        hpa:
+          cpuUtilization: 15
+    }            
+-- create a folder "templates"  in "frontend" folder
+-- create a file "deployment.yaml" in "templates" folder
+    {
+        deployment.yaml
+        ---------------
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: frontend
+          namespace: expense
+          labels:
+            app: frontend
+            tier: web
+            project: expense
+        spec:
+          replicas: {{ .Values.deployment.replicas }}
+          selector:
+            matchLabels:
+              app: frontend
+              tier: web
+              project: expense
+          template:
+            metadata:
+              labels:
+                app: frontend
+                tier: web
+                project: expense
+            spec:
+              containers:
+              - name: frontend
+                image: joindevops/frontend:{{ .Values.deployment.imageVersion }}
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 128Mi
+                  # limits is greater than or equal to requests
+                  limits:
+                    cpu: 100m
+                    memory: 128Mi
+
+    } 
+-- create a file "service.yaml" in "templates" folder        
+    {
+      service.yaml
+      -------------
+      kind: Service
+      apiVersion: v1
+      metadata:
+        name: frontend
+        namespace: expense
+      spec:
+        type: LoadBalancer
+        selector:
+          app: frontend
+          tier: web
+          project: expense
+        ports:
+        - name: frontend-port
+          protocol: TCP
+          port: 80 # service port
+          targetPort: 80 # container port      
+    }
+-- create a file "hpa.yaml" in "templates" folder  
+    {
+      hpa.yaml
+      --------
+      apiVersion: autoscaling/v1
+      kind: HorizontalPodAutoscaler
+      metadata:
+       name: frontend
+       namespace: expense
+      spec:
+       scaleTargetRef:
+         apiVersion: apps/v1
+         kind: Deployment
+         name: frontend
+       minReplicas: 1
+       maxReplicas: 10
+       targetCPUUtilizationPercentage: {{ .Values.hpa.cpuUtilisation }}      
+    }
+}
+
+(pushing to git-hub)
+  -- git add . ; git commit -m "helm-expense"; git push origin main
+
+(pulling to workstation)--Mobaxterm
+  -- git clone https://github.com/Shahul1507/helm-expense.git
+  -- cd helm-expense
+  #mysql
+  -- cd mysql
+  -- kubectl create namespace expense
+  -- kubens expense
+  -- helm install mysql .
+  #backend
+  -- cd ../backend
+  -- helm install backend .
+  #frontend
+  -- cd ../frontend
+  -- helm install frontend .
+  -- k9s
+  #k9s
+  -- shift: pods
+--> aws - instances - LoadBalancer - select the link
+--> run the link in browser 
+
+-- helm uninstall frontend
+-- helm uninstall backend
+-- helm uninstall mysql
+-- cd ~/k8-eksctl
+-- eksctl delete cluster --config-file=eks.yaml
+
 
 
 {
