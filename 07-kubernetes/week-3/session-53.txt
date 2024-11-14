@@ -311,7 +311,7 @@ HORIZONTAL POD AUTO-SCALING:
                 # run the load balancer url in browser(check ports are open)
             (load test the app with "apache bench" usage)
             -- ab --help
-            -- ab -n 5000 -c 100 -s 120 http://url:80/    
+            -- ab -n 5000 -c 100 -s 120 http://a55f8980f5b27462ebb4d92adb204acf-1306949386.us-east-1.elb.amazonaws.com:80/    
             (k9s)
             -- check the traffic -- we see pods increasing
             
@@ -334,7 +334,7 @@ HELM CHARTS :
    -- Helm are used for:
      --------------------
        1. to templatise manifest files
-       2. to install custom or popular applications in kubernetes like (CSI drivers, metrics server, prometheru/grafana)
+       2. to install & manage   custom or popular applications in kubernetes like (CSI drivers, metrics server, prometheru/grafana)
 
 ----------------------------------
 1. to templatise manifest files
@@ -515,7 +515,7 @@ HELM CHARTS :
                 -- helm list # image version updated
                 -- helm history nginx #revision-3
             (k9s)
-                -- shift:pods #we see 4 replicas       
+                -- shift:pods #we see 3 replicas       
         }
     --> (If there is revision failure)-- we have rollback
         --------------------------------------------------
@@ -555,7 +555,7 @@ HELM CHARTS :
                 aws-ebs-csi-driver/aws-ebs-csi-driver
          -- kubectl get pods -n kube-system # we see all the csi drivers       
        - Uninstall the csi drivers
-         -- helm uninstall aws-ebs-csi-driver - n kube-system
+         -- helm uninstall aws-ebs-csi-driver -n kube-system
          -- helm list -n kube-system
          
 }
@@ -880,6 +880,8 @@ EXPENSE-PROJECT | -- (Using Helm-charts)
 -- cd ~/k8-eksctl
 -- eksctl delete cluster --config-file=eks.yaml
 
+INTERVIEW:
+Q. What is HPA(Horizontal Pod HorizontalPodAutoscaler)
 
 
 {

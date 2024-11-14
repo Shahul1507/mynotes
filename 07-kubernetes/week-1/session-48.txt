@@ -29,7 +29,7 @@ disadvantages of docker
   -- (there is no relibility) since there is only one docker host...
   -- (there is no autoscaling)
   -- (there is no load balancing)
-  -- (volumes are inside docker host)..poor volume management
+  -- (volumes are present inside docker host)..poor volume management
   -- (security. no secret management)
   -- (no communication between containers in another host.. network management is not good)
 

@@ -1,0 +1,225 @@
+                                        --------------
+                                        | KUBERNETES |  
+                                        --------------
+                                            DAY-8
+                                        -------------		
+                                        |  CONTENT  | 
+                                        -------------
+                                        --> Taints and Tolerations
+                                        --> Affinity and Anti-affinity
+                                        --> Ingress controller
+
+
+=======================
+Taints and Tolerations 
+=======================                                         
+--> Ref-link: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+--> create "k8-selectors" folder in "git-hub"
+--> create "01.tolerations.yaml" file in "k8-selectors" folder
+(Taint)
+{    
+    -- Ref-link: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+    -- kubectl get pods # select any node ip 
+    -- kubectl taint nodes node1 key1=value1:NoSchedule
+    -- kubectl taint nodes ip-192-168-44-187.ec2.internal hardware=gpu:NoSchedule  
+
+            01.tolerations.yaml
+            -------------------
+            apiversion: v1
+            kind: pod
+            metadata:
+            name: nginx
+            spec:
+            containers:
+            - name: nginx
+                image: nginx:stable-perl                                      
+                                    
+        (pushing to git-hub)
+        -- git add . ; git commit -m "k8-selectors"; git push origin main
+    
+        (pulling to workstation)--Mobaxterm
+        -- git clone https://github.com/Shahul1507/k8-selectors.git
+        -- cd k8-selectors
+        -- kubectl apply -f 01.tolerations.yaml
+        -- kubectl get pods -o wide 
+           # we see the pod is created in other node 
+        -- kubectl describe node ip-192-168-44-187.ec2.internal
+           # we see the pod is tainted 
+        -- kubectl delete -f 01.tolerations.yaml   
+}                                     
+
+(Toleration) -- adding toleration to the pod 
+{  
+    -- Ref-link: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/  
+    -- copy "toletarions" script from the link to "01.tolerations.yaml" 
+
+            01.tolerations.yaml
+            -------------------
+            apiversion: v1
+            kind: pod
+            metadata:
+             name: nginx
+            spec:
+              containers:
+              - name: nginx
+                image: nginx:stable-perl 
+              tolerations:
+              - key: "hardware"
+                operator: "Equal"
+                value: "gpu"
+                effect: "NoSchedule"    
+
+                                    
+        (pushing to git-hub)
+        -- git add . ; git commit -m "k8-selectors"; git push origin main
+    
+        (pulling to workstation)--Mobaxterm
+        -- git pull
+        -- kubectl apply -f 01.tolerations.yaml
+        -- kubectl get pods -o wide 
+           # tainted node is not picked even after tolerations are given 
+ 
+}   
+
+(label node) - using "node-selector" to select the "tainted-node"
+{
+    -- Ref-link:https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes/
+    -- copy the cmd (kubectl label nodes <your-node-name> disktype=ssd) from link and run
+        -- kubectl label nodes ip-192-168-44-187.ec2.internal hardware=gpu
+    -- add "nodeselector" to the "01.tolerations.yaml" script
+
+            01.tolerations.yaml
+            -------------------
+            apiversion: v1
+            kind: pod
+            metadata:
+             name: nginx
+            spec:
+              containers:
+              - name: nginx
+                image: nginx:stable-perl 
+              nodeselector:
+                hardware: gpu  
+              tolerations:
+              - key: "hardware"
+                operator: "Equal"
+                value: "gpu"
+                effect: "NoSchedule" 
+
+        (pushing to git-hub)
+        -- git add . ; git commit -m "k8-selectors"; git push origin main
+    
+        (pulling to workstation)--Mobaxterm
+        -- git pull
+        -- kubectl delete -f 01.tolerations.yaml
+        -- kubectl apply -f 01.tolerations.yaml
+        -- kubectl get pods -o wide 
+            # we see pod is running in tainted node 
+                              
+
+}
+
+===========================
+Affinity and Anti-affinity
+===========================   
+
+--> Ref-link: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
+
+(Required During Scheduling Ignored During Execution)
+    --> The scheduler can't schedule the Pod unless the rule is met. 
+    --> This functions like "nodeSelector", but with a more expressive syntax.
+    --> create "02.affinity.yaml" file in "k8-selectors" folder
+    {
+
+        02-affinity.yaml
+        ----------------
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          name: nginx
+        spec:
+          affinity:
+            nodeAffinity:
+              # hard ware
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: hardware
+                    operator: In
+                    values:
+                    - gpu
+          containers:
+          # docker run -d --name nginx nginx
+          - name: nginx
+            image: nginx:stable-perl
+          # nodeSelector:
+          #   hardware: gpu
+          tolerations:
+          - key: "hardware"
+            operator: "Equal"
+            value: "gpu"
+            effect: "NoSchedule"
+
+        (pushing to git-hub)
+        -- git add . ; git commit -m "k8-selectors"; git push origin main
+    
+        (pulling to workstation)--Mobaxterm
+        -- git pull
+        -- kubectl label nodes ip-192-168-44-187.ec2.internal hardware=gpu
+        -- kubectl delete -f 01.tolerations.yaml
+        -- kubectl apply -f 02-affinity.yaml
+        -- kubectl get pods -o wide 
+            # we see pod is running in tainted node                     
+    }
+
+(Preffered During Scheduling Ignored During Execution)
+    --> The scheduler tries to find a node that meets the rule. 
+    --> If a matching node is not available, the scheduler still schedules the Pod.
+    --> create "03.affinity.yaml" file in "k8-selectors" folder
+    {
+
+        03-affinity.yaml
+        ----------------
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          name: nginx
+        spec:
+          affinity:
+            nodeAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 1
+                preference:
+                  matchExpressions:
+                  - key: another-node-label-key
+                    operator: In
+                    values:
+                    - another-node-label-value
+          containers:
+          # docker run -d --name nginx nginx
+          - name: nginx
+            image: nginx:stable-perl
+          # nodeSelector:
+          #   hardware: gpu
+          tolerations:
+          - key: "hardware"
+            operator: "Equal"
+            value: "gpu"
+            effect: "NoSchedule"
+ 
+        (pushing to git-hub)
+        -- git add . ; git commit -m "k8-selectors"; git push origin main
+    
+        (pulling to workstation)--Mobaxterm
+        -- git pull
+        -- kubectl delete -f 02-affinity.yaml
+        -- kubectl apply -f 03-affinity.yaml
+        -- kubectl get pods -o wide 
+            # we see pod is running ,even selectors are not matched 
+            # it scheduler tried to find the rule,since its not matched 
+            # it picked random node to run the pod                    
+    }    
+
+=============
+pod-affinity
+=============

@@ -79,6 +79,7 @@ EXPENSE-PROJECT
            # show databases;
            # use transactions;
            # show tables;
+           # SELECT * from transactions;
            # exit
     }   
     
