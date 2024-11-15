@@ -21,7 +21,8 @@ Taints and Tolerations
     -- Ref-link: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
     -- kubectl get pods # select any node ip 
     -- kubectl taint nodes node1 key1=value1:NoSchedule
-    -- kubectl taint nodes ip-192-168-44-187.ec2.internal hardware=gpu:NoSchedule  
+    -- kubectl taint nodes ip-192-168-20-92.ec2.internal hardware=gpu:NoSchedule  
+   #-- kubectl taint nodes ip-192-168-20-92.ec2.internal hardware=gpu:NoSchedule- (untaint)
 
             01.tolerations.yaml
             -------------------
@@ -43,9 +44,9 @@ Taints and Tolerations
         -- kubectl apply -f 01.tolerations.yaml
         -- kubectl get pods -o wide 
            # we see the pod is created in other node 
-        -- kubectl describe node ip-192-168-44-187.ec2.internal
+        -- kubectl describe node ip-192-168-20-92.ec2.internal
            # we see the pod is tainted 
-        -- kubectl delete -f 01.tolerations.yaml   
+        -- kubectl delete -f 01-tolerations.yaml   
 }                                     
 
 (Toleration) -- adding toleration to the pod 
@@ -77,7 +78,7 @@ Taints and Tolerations
         -- git pull
         -- kubectl apply -f 01.tolerations.yaml
         -- kubectl get pods -o wide 
-           # tainted node is not picked even after tolerations are given 
+           # tainted node is may or not picked even after tolerations are given 
  
 }   
 
@@ -165,7 +166,7 @@ Affinity and Anti-affinity
     
         (pulling to workstation)--Mobaxterm
         -- git pull
-        -- kubectl label nodes ip-192-168-44-187.ec2.internal hardware=gpu
+        -- kubectl label nodes ip-192-168-20-92.ec2.internal hardware=gpu
         -- kubectl delete -f 01.tolerations.yaml
         -- kubectl apply -f 02-affinity.yaml
         -- kubectl get pods -o wide 
@@ -223,3 +224,265 @@ Affinity and Anti-affinity
 =============
 pod-affinity
 =============
+--> Ref-link: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity
+(creating pod for pod-affinity)
+    --> create "04-pod-affinity" file in "k8-selectors"
+    {
+        04-pod-affinity.yaml
+        --------------------
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          name: pod-1
+        spec:
+          containers:
+          # docker run -d --name nginx nginx
+          - name: nginx
+            image: nginx:stable-perl
+    (pushing to git-hub)
+        -- git add . ; git commit -m "k8-selectors"; git push origin main
+    
+    (pulling to workstation)--Mobaxterm
+        -- git pull
+        -- kubectl delete -f 03-affinity.yaml
+        -- kubectl apply -f 04-pod-affinity.yaml
+        -- kubectl get pods -o wide 
+            # we see pod is runnung in some random worker node         
+    }
+
+(creating pod-affinity to pod-1) -- to make "pod-2" running in same node of "pod-1"
+    --> Ref-link: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity
+    --> copy the affinity syntax from above link
+    {
+        04-pod-affinity.yaml
+        ----------------
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          name: pod-1
+          labels:               #add
+            purpose: affinity
+        spec:
+          containers:
+          # docker run -d --name nginx nginx
+          - name: nginx
+            image: nginx:stable-perl
+        ---
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          name: pod-2
+        spec:                  # add
+          affinity:
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchExpressions:
+                  - key: purpose     #label values from pod 1
+                    operator: In
+                    values:
+                    - affinity
+                topologyKey: topology.kubernetes.io/zone
+          containers:
+          # docker run -d --name nginx nginx
+          - name: nginx
+            image: nginx:stable-perl
+    (pushing to git-hub)
+        -- git add . ; git commit -m "k8-selectors"; git push origin main
+    
+    (pulling to workstation)--Mobaxterm
+        -- git pull
+        -- kubectl apply -f 04-pod-affinity.yaml
+        -- kubectl get pods -o wide 
+            # we see pod-2 is runnung in worker node of pod-1        
+    }    
+
+================
+pod-Antiaffinity
+================    
+(creating pod-affinity to pod-1) -- to make "pod-2" running in same node of "pod-1" & "Pod-3" in some random node 
+    --> Ref-link: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity
+    --> copy the anti-affinity syntax from above link
+    {
+        05-pod-antiaffinity.yaml
+        ----------------
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          name: pod-1
+          labels:
+            purpose: affinity
+        spec:
+          containers:
+          # docker run -d --name nginx nginx
+          - name: nginx
+            image: nginx:stable-perl
+        ---
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          name: pod-2
+        spec:
+          affinity:
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchExpressions:
+                  - key: purpose
+                    operator: In
+                    values:
+                    - affinity
+                topologyKey: topology.kubernetes.io/zone
+          containers:
+          # docker run -d --name nginx nginx
+          - name: nginx
+            image: nginx:stable-perl
+        ---
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          name: pod-3
+        spec:
+          affinity:
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchExpressions:
+                  - key: purpose
+                    operator: In
+                    values:
+                    - affinity
+                topologyKey: topology.kubernetes.io/zone
+          containers:
+          # docker run -d --name nginx nginx
+          - name: nginx
+            image: nginx:stable-perl
+            
+    (pushing to git-hub)
+        -- git add . ; git commit -m "k8-selectors"; git push origin main
+    
+    (pulling to workstation)--Mobaxterm
+        -- git pull
+        -- kubectl delete -f 04-pod-affinity.yaml
+        -- kubectl apply -f 05-pod-antiaffinity.yaml
+        -- kubectl get pods -o wide 
+            # we see pod-2 is runnung in worker node of pod-1  (pod-affinity) 
+            # we see pod-3 is running some random node (pod-antiaffinity)  
+        -- kubectl delete -f 05-pod-antiaffinity.yaml       
+    }   
+
+=============================================
+use-case for pod-affinity & Pod-antiaffinity    
+=============================================
+use-case1
+----------
+  1.creating 2-replicas of cache (pod-affinity)
+  2.creating 2-replicas of app-store (pod-affinity)
+-->pods of "cache" are created in 1same nodes 
+-->pods of "app" are created in same node where cache pods created 
+ 
+use-case2
+----------
+  1.creating 3-replicas of cache (pod-antiaffinity)
+  2.creating 3-replicas of app-store (pod-antiaffinity)
+-->pods of "cache" are created in 3differnt nodes 
+-->pods of "app" are created in 3same nodes where cache pods created  
+
+Example:
+-------
+--> Ref-link:https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#more-practical-use-cases
+--> Follow the link to understand the use-case 
+
+(Creating deployment to reddis-cache)
+{
+    06-use-case.yaml
+    -----------------
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: redis-cache
+    spec:
+      selector:
+        matchLabels:
+          app: store
+      replicas: 3
+      template:
+        metadata:
+          labels:
+            app: store
+        spec:
+          affinity:
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                    - store
+                topologyKey: "kubernetes.io/hostname"
+          containers:
+          - name: redis-server
+            image: redis:3.2-alpine    
+     (pushing to git-hub)
+        -- git add . ; git commit -m "k8-selectors"; git push origin main
+        
+    (pulling to workstation)--Mobaxterm
+        -- git pull
+        -- kubectl apply -f 06-use-case.yaml
+        -- kubectl get pods -o wide 
+            #we see all the 3 replicase each created in diffrent nodes           
+}            
+
+(Creating deployment to web-server)
+{
+    06-use-case.yaml
+    -----------------
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: web-server
+    spec:
+      selector:
+        matchLabels:
+          app: web-store
+      replicas: 3
+      template:
+        metadata:
+          labels:
+            app: web-store
+        spec:
+          affinity:
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                    - web-store
+                topologyKey: "kubernetes.io/hostname"
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                    - store
+                topologyKey: "kubernetes.io/hostname"
+          containers:
+          - name: web-app
+            image: nginx:1.16-alpine
+     (pushing to git-hub)
+        -- git add . ; git commit -m "k8-selectors"; git push origin main
+        
+    (pulling to workstation)--Mobaxterm
+        -- git pull
+        -- kubectl apply -f 06-use-case.yaml
+        -- kubectl get pods -o wide 
+            #we see all the 3 replicas of "web-server" each created in diffrent nodes attaching to cache 
+        -- kubectl delete -f 06-use-case.yaml              
+}  
+
+ 

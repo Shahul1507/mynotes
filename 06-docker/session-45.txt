@@ -303,7 +303,7 @@ Backend container :
         -- apt remove telnet -y
 
     }
-    --> mysqk&backend are conneted
+    --> mysql&backend are conneted
 ==================== 
 Frontend container : 
 ====================
@@ -330,7 +330,7 @@ Frontend container :
     -- cd ../frontend
     -- docker build -t frontend:v1 .
     -- docker images (check image is built)
-    -- docker run -d --p 80:80 --network expense --name frontend frontend:v1 
+    -- docker run -d -p 80:80 --network expense --name frontend frontend:v1 
     -- docker ps
     -- run the public_ip:80 in browser # run the expense app
     -- docker rm -f $(docker ps -a)

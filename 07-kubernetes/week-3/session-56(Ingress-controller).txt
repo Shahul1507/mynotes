@@ -1,0 +1,281 @@
+Ref-link: Official-- https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/
+
+===================
+Ingress Controller
+===================
+--> Ingress controller is nothing but a load balancer
+
+    Classic LB --> By default it creates classic load balancer
+    Limitation --> 
+                -- it is not intelligent
+                -- it can't route traffic to different target groups
+                -- it is not recommend by AWS
+
+--> To over come these limitations 
+  
+    ALB--> K8 uses ALB (AutoLoadBalancer) as ingress controller 
+    Advantages-->
+               -- it is intelligent
+               -- it routes traffic to multiple tg based on host or context rules
+               -- it works on layer-7  
+=================================================================================================================
+(EXPLAIN INGRESS CONTROLLER)
+--> If we want give internet access to our app running in K8 by provisoning ingress controller.
+--> We are using ALB as our ingress controller. 
+--> We installed aws load balancer controller drivers through helm charts and given appropriate permissions.
+=================================================================================================================
+In k8 = Ingress controller 
+In aws = aws load balancer controller 
+
+(Creating Ingress - controller)
+    --> Create "k8-ingress" 
+    --> Official-- https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/
+    --> Select - "Deployment"  
+    --> Go-to - "Installation guide"
+
+    Steps:(Ingress controller)--run the steps in ec2-user
+        {
+        1. (Create an IAM OIDC provider) -- # to provide access to k8 
+                eksctl utils associate-iam-oidc-provider \
+                    --region us-east-1 \  #add region
+                    --cluster expense \ #add cluster 
+                    --approve
+
+        2. (Download an IAM policy for the LBC using command:)  
+                curl -o iam-policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.10.0/docs/install/iam_policy.json          
+        
+        3. (Create an IAM policy named AWSLoadBalancerControllerIAMPolicy)
+                    aws iam create-policy \
+                    --policy-name AWSLoadBalancerControllerIAMPolicy \
+                    --policy-document file://iam-policy.json
+                # Take note of the policy ARN that's returned.
+                "Arn": "arn:aws:iam::761018865467:policy/AWSLoadBalancerControllerIAMPolicy"
+        4. (Create an IAM role and Kubernetes ServiceAccount for the LBC. Use the ARN from the previous step.)
+                    eksctl create iamserviceaccount \
+                    --cluster=expense \ # add cluster name
+                    --namespace=kube-system \
+                    --name=aws-load-balancer-controller \
+                    --attach-policy-arn=arn:aws:iam::761018865467:policy/AWSLoadBalancerControllerIAMPolicy \ # add aws acc_id
+                    --override-existing-serviceaccounts \
+                    --region us-east-1 \ # add region
+                    --approve 
+        
+        5. (Add the EKS chart repo to Helm)   
+                    helm repo add eks https://aws.github.io/eks-charts 
+        
+        6. (Helm install command for clusters with IRSA:)  # add cluster name (expense)
+                    helm install aws-load-balancer-controller eks/aws-load-balancer-controller -n kube-system --set clusterName=expense --set serviceAccount.create=false --set serviceAccount.name=aws-load-balancer-controller       
+        
+        (check): kubectl get pods -n kube-system # we see "ALB" controllers running
+                
+        }  
+(Creationg 2 apps using ingress controller)
+
+    https://app1.daws81s.online --> app1
+    https://app2.daws81s.online --> app2
+
+=======
+(app1):
+=======
+    
+--> create a "app1" folder in "k8-ingress"
+--> create a "Dockerfile" in "app1"
+
+--> (Creating Docker-file )
+    -- create a "Dockerfile" in "app1"
+    {    
+        Dockerfile
+        -----------
+        FROM nginx:alpine
+        RUN rm -rf /usr/share/nginx/html/index.html
+        RUN echo "<h1>Hello, I am from APP-1</h1>" > /usr/share/nginx/html/index.html   
+
+    (pushing to git-hub)
+      -- git add . ; git commit -m "k8-ingress"; git push origin main
+        
+    (pulling to workstation)--Mobaxterm
+        -- git clone https://github.com/Shahul1507/k8-ingress.git
+        -- cd k8-ingress
+        -- cd app1
+        -- docker build -t shahuldoc/aap1:v1 .
+        -- docker login -u shahuldoc
+           -- password
+        -- docker push shahuldoc/app1:v1  
+    }     
+
+--> (Creating deployment & service manifest file) 
+    -- create "manifest.yaml" in "app1"
+    {
+        manifest.yaml
+        -------------  
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: app1
+          labels: # these are replicaset labels
+            name: app1
+            tier: frontend
+        spec:
+          # modify replicas according to your case
+          replicas: 1
+          selector:
+            # these are used to select the pod to create replicas
+            matchLabels:
+              name: app1
+              tier: frontend
+          # this is pod definition
+          template:
+            metadata:
+              # these labels belongs to pod
+              labels:
+                name: app1
+                tier: frontend
+            spec:
+              containers:
+              - name: app1
+                image: shahuldoc/app1:v1
+        ---
+        kind: Service
+        apiVersion: v1
+        metadata:
+          name: app1
+        spec:
+          selector:
+            name: app1
+            tier: frontend
+          ports:
+          - name: nginx-svc-port
+            protocol: TCP
+            port: 80 # service port
+            targetPort: 80 # container port 
+
+        (pushing to git-hub)
+            -- git add . ; git commit -m "k8-selectors"; git push origin main
+            
+        (pulling to workstation)--Mobaxterm
+            -- git pull
+            -- kubectl apply -f manifest.yaml
+               # deployment created 
+               # service created
+            -- kubectl get pods   
+               # wee see app1 pod is created      
+
+    }
+--> (Creating ACM-(AWS certificate Manager) to get the certificate-arn) -- to paas it to "ingress-resource"
+    {
+    --> aws --> acm --> list certificates --> request
+        - Request certificate 
+          -- Certificate type = Request a public certificate
+          - NEXT 
+    --> copy the arn from "certificate status" # pass it to ingress block
+          -- arn:aws:acm:us-east-1:761018865467:certificate/9ab07533-0a8c-4830-b7f5-45bb93ba39ae      
+        - Domain name
+          -- Fully qualified domain name = *.shahul.online
+          - REQUEST
+    --> Once successfully requested certificate generated
+        - Domains
+          -- create records in Route 53  
+    }            
+--> (Creating Ingress resource with alb) -- provides ALB
+    -- creating "ingress resource/object" for the app1 that requires external access
+    {
+    -- Ref-link1:https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/examples/echo_server/
+    -- Ref-link2:https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/guide/ingress/annotations/
+    -- add the "ingress-resource" to "manifest.yaml" referening the above link
+    
+        manifest.yaml
+        -------------
+        --- #ingress resource (ref-link1)
+        apiVersion: networking.k8s.io/v1
+        kind: Ingress
+        metadata:
+            name: app1
+            annotations: # ref link2 
+                kubernetes.io/ingress.class: alb
+                alb.ingress.kubernetes.io/scheme: internet-facing
+                alb.ingress.kubernetes.io/target-type: ip
+                alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:761018865467:certificate/a323e7e8-eb8b-4caa-adfb-010917d10e31
+                alb.ingress.kubernetes.io/listen-ports: '[ {"HTTPS": 443}]'
+                alb.ingress.kubernetes.io/tags: Environment=dev,Team=test
+                alb.ingress.kubernetes.io/group.name: expense
+        #Ref-link:(https://kubernetes.io/docs/concepts/services-networking/ingress/)                
+        spec:
+            ingressClassName: alb
+            rules:
+            - host: "app1.shahul.online"
+            http:
+                paths:
+                - pathType: Prefix
+                path: "/"
+                backend:
+                    service:
+                    name: app1
+                    port:
+                        number: 80 
+    (pushing to git-hub)
+        -- git add . ; git commit -m "k8-selectors"; git push origin main
+        
+    (pulling to workstation)--Mobaxterm
+        -- git pull
+        -- kubectl apply -f manifest.yaml
+            # deployment created 
+            # service created
+            # ingress/networking.k8s.io/v1 configured
+        -- kubectl get ingress  
+            # wee see HOSTS & ADDRESS (load-balancer) for the app                         
+    }                          
+--> (check ALB):
+    {
+    --> AWS --> EC2 --> Load balancing --> load balancers --> listners&rules
+       - HTTP:443
+         -- listner = 443
+         -- rules = app1.shahul.online
+         -- target group created with pod_ip
+       - kubectl get pods -o wide
+            # we see pod-ip  
+    --> once load balancer is active -- create route 53
+    }
+--> (Creating routete-53)
+    {
+    --> AWS --> Route 53 --> Hosted zones --> shahul.onine --> create record
+        - record name = app1.shahul.online
+        - record type = A
+        - alias
+          -- route traffic to
+             - Alias to application & classic load balancer
+          -- region
+             - us-east-1
+          -- select load balancer   
+        CREATE RECORD
+        -- aap1.shahul.online is created 
+    }    
+--> Run "https://aap1.shahul.online " in browser 
+         
+
+        
+=====
+app2
+=====
+--> similarly creating "app2" with same "groupname" and "loadbalancer"
+--> groupname is not provided in "ingress block-annotations" - aap2 creates another "load-balancer"
+
+
+(pushing to git-hub)
+-- git add . ; git commit -m "k8-selectors"; git push origin main
+
+(pulling to workstation)--Mobaxterm
+-- git pull
+-- cd ../app2
+-- docker build -t shahuldoc/aap2:v1 .
+-- docker login -u shahuldoc
+   -- password
+-- docker push shahuldoc/app2:v1  
+
+-- kubectl apply -f manifest.yaml
+   # deployment created 
+   # service created
+    # ingress/networking.k8s.io/v1 configured
+-- kubectl get pods   
+   # wee see app1 pod is created    
+
+  
