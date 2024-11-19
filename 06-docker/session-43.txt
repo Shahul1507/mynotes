@@ -142,7 +142,7 @@ DOCKER FILE INSTRUCTIONS
    LABEL dosen't effect any functionality it only adds information to the image.
    ex: when there are multiple images. LABEL helps to filter the image out of all.
    -- run cmd:(docker images -f 'label=company=joindevops')
-   -- run cmd (docker insoect <image_id>) 
+   -- run cmd (docker inspect <image_id>) 
 }
 
 {-->EXPOSE - (used to let the users know what are the ports this container will open when it runs.. EXPOSE instruction will not effect functionality it will only gives information)
