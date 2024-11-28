@@ -1,8 +1,36 @@
+                                                --------------
+                                                | KUBERNETES |  
+                                                --------------
+                                                    DAY-10
+                                                -------------		
+                                                |  CONTENT  | 
+                                                -------------
+                                            --> Creating EKS cluster using terraform
+ 
+(CLuster creation using Terraform)
+-----------------------------------
+
+
+
+
+40-eks 
+---------
+-->Ref-link:https://registry.terraform.io/modules/terraform-aws-modules/eks/aws/latest
+-->create  open source module refering to above link
+
+Expense-project:
+---------------
+-- login to Bastion-host (Mobaxterm)
+-- aws configure (authentication)
+-- aws eks update-kubeconfig --region us-east-1 --name expense-dev
+-- kubectl get nodes
+
+
 we use terraform to create cluster and upgrade
 
-we will create cluster
+wewill create cluster
 we will run app
-we will upgrade cluster
+we will upgrade cluster 
 
 10.0.0.0/16
 

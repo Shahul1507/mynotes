@@ -20,8 +20,8 @@ Ingress Controller
                -- it works on layer-7  
 =================================================================================================================
 (EXPLAIN INGRESS CONTROLLER)
---> If we want give internet access to our app running in K8 by provisoning ingress controller.
---> We are using ALB as our ingress controller. 
+--> Ingress-controller purpose is to provide internet access to the application running in k8s
+--> We use ALB as our ingress controller. 
 --> We installed aws load balancer controller drivers through helm charts and given appropriate permissions.
 =================================================================================================================
 In k8 = Ingress controller 
@@ -66,7 +66,11 @@ In aws = aws load balancer controller
         6. (Helm install command for clusters with IRSA:)  # add cluster name (expense)
                     helm install aws-load-balancer-controller eks/aws-load-balancer-controller -n kube-system --set clusterName=expense --set serviceAccount.create=false --set serviceAccount.name=aws-load-balancer-controller       
         
-        (check): kubectl get pods -n kube-system # we see "ALB" controllers running
+        (check):
+        -- helm list
+        -- helm list -n kube-system
+        -- kubectl get pods -n kube-system # we see "ALB" controllers running
+
                 
         }  
 (Creationg 2 apps using ingress controller)
@@ -257,7 +261,7 @@ In aws = aws load balancer controller
 app2
 =====
 --> similarly creating "app2" with same "groupname" and "loadbalancer"
---> groupname is not provided in "ingress block-annotations" - aap2 creates another "load-balancer"
+--> if groupname is not provided in "ingress block-annotations" - aap2 creates another "load-balancer"
 
 
 (pushing to git-hub)
@@ -275,7 +279,24 @@ app2
    # deployment created 
    # service created
     # ingress/networking.k8s.io/v1 configured
+-- kubectl get ingress    
 -- kubectl get pods   
-   # wee see app1 pod is created    
+   # wee see app1 pod is created   
+(Creating routete-53)
+   {
+   --> AWS --> Route 53 --> Hosted zones --> shahul.onine --> create record
+       - record name = app2.shahul.online
+       - record type = A
+       - alias
+         -- route traffic to
+            - Alias to application & classic load balancer
+         -- region
+            - us-east-1
+         -- select load balancer   
+       CREATE RECORD
+       -- aap2.shahul.online is created 
+   }    
+--> Run "https://aap2.shahul.online " in browser    
+
 
   

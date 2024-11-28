@@ -316,6 +316,7 @@ Frontend container :
     -- create "Dockerfile" in frontend folder
     -- write a code refering to expense doc.
     -- Dockerfile
+       ----------
         FROM nginx
         COPY code /usr/share/nginx/html
         RUN rm -rf /etc/nginx/nginx.conf

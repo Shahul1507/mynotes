@@ -1,10 +1,18 @@
-Revise ingress controller
-init containers
-liveness and readiness probe
-how to use configmap as volume
-
+                                            --------------
+                                            | KUBERNETES |  
+                                            --------------
+                                                DAY-9
+                                            -------------		
+                                            |  CONTENT  | 
+                                            -------------
+                                            --> Revise ingress controller
+                                            --> init containers
+                                            --> liveness and readiness probe
+                                            --> how to use configmap as volume
+=====================
 ingress controller
-----------------------
+=====================
+{
 Ingress controller is used to provide external access to the applications running inside k8. in EKS we can use ALB as ingress controller.
 
 We install aws load balancer controller to connect with ALB and provide permission to EKS.
@@ -29,20 +37,221 @@ eksctl create iamserviceaccount \
 --region us-east-1 \
 --approve
 
-liveness probe and readiness probe
------------------------------------
+
+--> helm list
+--> helm list -n kube-system
+--> kubectl get pods -n kube-system
+}
+
+===================================
+liveness probe and readiness probe 
+===================================
 self healing.. auto restart. if your app is not working, k8 can auto restart your application
 
 liveness probe --> health check
 readiness probe --> ready to accept traffic
 
-mysql backend
+1. Liveness and readiness is container level configuration
 
-when port 8080 is opened, then we can say mysql is ready
+(configuring Liveness and readiness probes  in mysql and backend)
+------
+mysql:
+------
+{
+--> Ref-link :https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+--> create "readiness" and "liveness" block in "expense-k8/mysql/manifest.yaml" refering to link
+     mysql/manifest.yaml
+     -------------------
+     {
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: mysql
+          namespace: expense
+          labels:
+            app: mysql
+            tier: db
+            project: expense
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: mysql
+              tier: db
+              project: expense
+          template:
+            metadata:
+              labels:
+                app: mysql
+                tier: db
+                project: expense
+            spec:
+              containers:
+              - name: mysql
+                image: shahuldoc/mysql:v1
+                readinessProbe:
+                  tcpSocket:
+                    port: 3306
+                  initialDelaySeconds: 15
+                  periodSeconds: 10
+            # liveness and readiness probe is same      
+                livenessProbe:
+                  tcpSocket:
+                    port: 3306
+                  initialDelaySeconds: 15
+                  periodSeconds: 10  
+        
+        ---
+        kind: Service
+        apiVersion: v1
+        metadata:
+          name: mysql
+          namespace: expense
+        spec:
+          selector:
+            app: mysql
+            tier: db
+            project: expense
+          ports:
+          - name: mysql-port
+            protocol: TCP
+            port: 3306 # service port
+            targetPort: 3306 # container port        
+          
 
-init containers
-----------------------
-before backend starts, we need to make sure DB is running and accessable
+     }
+
+   (pushing to git-hub)
+     -- git add . ; git commit -m "k8-ingress"; git push origin main
+       
+   (pulling to workstation)--Mobaxterm
+       -- git clone https://github.com/Shahul1507/expense-k8.git
+       -- cd expense-k8
+       -- kubectl apply -f namespace.yaml
+       -- kubens expense
+       -- cd mysql
+       -- kubectl apply -f manifest.yaml
+       -- kubectl get pods 
+            # we see pod is running after certain delay
+}            
+--------
+backend:
+--------
+{
+--> Ref-link :https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+--> create "readiness" and "liveness" block in "expense-k8/backend/manifest.yaml" referening to link
+     backend/manifest.yaml
+     -------------------
+     {
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: backend
+          namespace: expense
+        data:
+          DB_HOST: mysql
+        ---
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: backend
+          namespace: expense
+          labels:
+            app: backend
+            tier: api
+            project: expense
+        spec:
+          replicas: 2
+          selector:
+            matchLabels:
+              app: backend
+              tier: api
+              project: expense
+          template:
+            metadata:
+              labels:
+                app: backend
+                tier: api
+                project: expense
+            spec:
+              # initContainers:
+              # - name: mysql-check
+              #   image: busybox:1.28
+              #   command: ['sh', '-c', "until nslookup mysql; do echo waiting for myservice; sleep 2; done"]
+              containers:
+              - name: backend
+                image: shahuldoc/backend:v1
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 128Mi
+                  # limits is greater than or equal to requests
+                  limits:
+                    cpu: 100m
+                    memory: 128Mi
+                envFrom:
+                - configMapRef:
+                    name: backend
+                readinessProbe:
+                  tcpSocket:
+                    port: 8080
+                  initialDelaySeconds: 15
+                  periodSeconds: 10
+                livenessProbe:
+                  httpGet:
+                    path: /health
+                    port: 8080
+                  initialDelaySeconds: 3
+                  periodSeconds: 3    
+        ---
+        kind: Service
+        apiVersion: v1
+        metadata:
+          name: backend
+          namespace: expense
+        spec:
+          selector:
+            app: backend
+            tier: api
+            project: expense
+          ports:
+          - name: backend-port
+            protocol: TCP
+            port: 8080 # service port
+            targetPort: 8080 # container port     
+        ---
+        apiVersion: autoscaling/v1
+        kind: HorizontalPodAutoscaler
+        metadata:
+         name: backend
+         namespace: expense
+        spec:
+         scaleTargetRef:
+           apiVersion: apps/v1
+           kind: Deployment
+           name: backend
+         minReplicas: 1
+         maxReplicas: 10
+         targetCPUUtilizationPercentage: 15 # usually 75 in real environment    
+        
+          
+
+     }
+
+   (pushing to git-hub)
+     -- git add . ; git commit -m "k8-ingress"; git push origin main
+       
+   (pulling to workstation)--Mobaxterm
+       -- git clone https://github.com/Shahul1507/expense-k8.git
+       -- cd ../backend
+       -- kubectl apply -f manifest.yaml
+       -- kubectl get pods 
+            # we see pod is running after certain delay
+}
+=====================================
+init containers (init=initilization)
+=====================================
+Before backend starts, we need to make sure DB is running and accessable
 
 -> we can run init containers before main containes run. It can be or many.
 -> init containers should be ready before main container runs
@@ -50,7 +259,387 @@ before backend starts, we need to make sure DB is running and accessable
 -> Init containers goes to completion state.
 -> to set configuration and check external dependency apps status we can make use of init containers
 
+ex cmd:
 for i in {1..100}; do sleep 1; if nslookup mysql; then exit 0; fi; done; exit 1
+
+(Configuring init containers in  "backend" so "DB" is up and running)
+
+--------
+Backend:
+--------
+{
+    --> Ref-link :https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
+    --> create "init containers" in "expense-k8/backend/manifest.yaml" referening to link
+         backend/manifest.yaml
+         -------------------
+         {
+            apiVersion: v1
+            kind: ConfigMap
+            metadata:
+              name: backend
+              namespace: expense
+            data:
+              DB_HOST: mysql
+            ---
+            apiVersion: apps/v1
+            kind: Deployment
+            metadata:
+              name: backend
+              namespace: expense
+              labels:
+                app: backend
+                tier: api
+                project: expense
+            spec:
+              replicas: 2
+              selector:
+                matchLabels:
+                  app: backend
+                  tier: api
+                  project: expense
+              template:
+                metadata:
+                  labels:
+                    app: backend
+                    tier: api
+                    project: expense
+                spec:
+                  initContainers:    # add
+                  - name: mysql-check
+                    image: busybox:1.28
+                    command: ['sh', '-c', "until nslookup mysql; do echo waiting for myservice; sleep 2; done"]
+                  containers:
+                  - name: backend
+                    image: shahuldoc/backend:v1
+                    resources:
+                      requests:
+                        cpu: 100m
+                        memory: 128Mi
+                      # limits is greater than or equal to requests
+                      limits:
+                        cpu: 100m
+                        memory: 128Mi
+                    envFrom:
+                    - configMapRef:
+                      name: backend
+                    readinessProbe:
+                      tcpSocket:
+                        port: 8080
+                      initialDelaySeconds: 15
+                      periodSeconds: 10
+                    livenessProbe:
+                      httpGet:
+                        path: /health
+                        port: 8080
+                      initialDelaySeconds: 3
+                      periodSeconds: 3    
+            ---
+            kind: Service
+            apiVersion: v1
+            metadata:
+              name: backend
+              namespace: expense
+            spec:
+              selector:
+                app: backend
+                tier: api
+                project: expense
+              ports:
+              - name: backend-port
+                protocol: TCP
+                port: 8080 # service port
+                targetPort: 8080 # container port     
+            ---
+            apiVersion: autoscaling/v1
+            kind: HorizontalPodAutoscaler
+            metadata:
+             name: backend
+             namespace: expense
+            spec:
+             scaleTargetRef:
+               apiVersion: apps/v1
+               kind: Deployment
+               name: backend
+             minReplicas: 1
+             maxReplicas: 10
+             targetCPUUtilizationPercentage: 15 # usually 75 in real environment    
+            
+              
+    
+         }
+    
+       (pushing to git-hub)
+         -- git add . ; git commit -m "k8-ingress"; git push origin main
+           
+       (pulling to workstation)--Mobaxterm
+           -- git pull
+           -- kubectl delete -f manifest.yaml
+           -- kubectl apply -f manifest.yaml
+           -- kubectl get pods 
+                # we see pod is running after certain delay
+}
+
+===========================
+Using ConfigMap as volume  :
+===========================
 
 application code and configuration
 -----------------------------------
+--> we have application code & configuration 
+    - application code is seperate
+    - configuration is seperate
+---------
+frontend
+---------    
+--> In "frontend" we have (nginx.conf) file in "frontend" docker image
+--> We use "config map" to put "nginx.conf" while deploying the pod  
+--> Ref-link: https://stackoverflow.com/questions/64178370/custom-nginx-conf-from-configmap-in-kubernetes
+{
+1.(creating "configMap" to frontend "nginx.conf")
+{
+--> copy "nginx.conf"  data from "dockerfile/frontend" to "frontend/manifest.yaml" - configMap
+
+frontend/manifest.yaml
+-----------------------
+
+#configMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend
+  namespace: expense
+data:
+  nginx.conf: | # | represents multi line file
+    user www-data;
+    worker_processes 4;
+    pid /var/run/nginx.pid;
+
+    events {
+      worker_connections 768;
+      # multi_accept on;
+    }
+
+    http {
+
+      ##
+      # Basic Settings
+      ##
+
+      sendfile on;
+      tcp_nopush on;
+      tcp_nodelay on;
+      keepalive_timeout 65;
+      types_hash_max_size 2048;
+      large_client_header_buffers 6 32k;
+      client_max_body_size 100m;
+
+      # server_names_hash_bucket_size 64;
+      # server_name_in_redirect off;
+      include /etc/nginx/mime.types;
+      default_type application/octet-stream;
+
+      ##
+      # Logging Settings
+      ##
+      access_log /var/log/nginx/access.log;
+      error_log /var/log/nginx/error.log debug; # change from debug to warn or error for production
+
+      ##
+      # Gzip Settings
+      ##
+      gzip on;
+      gzip_disable "msie6";
+
+      ##
+      # Virtual Host Configs
+      ##
+
+      include /etc/nginx/conf.d/*.conf;
+      include /etc/nginx/sites-enabled/*;
+
+      server {
+        listen       80;
+        server_name  localhost;
+
+        proxy_http_version 1.1;
+
+        #charset koi8-r;
+        #access_log  /var/log/nginx/host.access.log  main;
+        #error_log /dev/stdout debug;
+        #rewrite_log on;
+
+        location / {
+            root   /usr/share/nginx/html;
+            index  index.html index.htm;
+            ssi    on;
+        }
+
+        location /images/ {
+            expires 5s;
+            root   /usr/share/nginx/html;
+            try_files $uri /images/placeholder.png;
+        }
+
+        #error_page  404              /404.html;
+
+        # redirect server error pages to the static page /50x.html
+        #
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   /usr/share/nginx/html;
+        }
+        
+        location /api/ { 
+            proxy_pass http://backend:8080/;
+        }
+
+        }
+
+    }
+
+}
+
+2.(Mounting "configMap" to "volumes")
+-------------------------------------
+{
+--> mounting configMap to volumes
+
+frontend/manifest.yaml
+-----------------------
+
+# mounting volumes
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: expense
+  labels:
+    app: frontend
+    tier: web
+    project: expense
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+      tier: web
+      project: expense
+  template:
+    metadata:
+      labels:
+        app: frontend
+        tier: web
+        project: expense
+    spec:
+      containers:
+      - name: frontend
+        image: joindevops/frontend:v1
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          # limits is greater than or equal to requests
+          limits:
+            cpu: 100m
+            memory: 128Mi
+      volumes:                              #------add
+      - name: nginx-conf
+        configMap:
+          name: frontend
+          items:
+            - key: nginx.conf
+              path: nginx.conf
+
+}
+
+3.(Mounting "volumes" to "containers")
+--------------------------------------
+{
+--> mounting volumes to containers
+
+frontend/manifest.yaml
+-----------------------
+
+# mounting volumes
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: expense
+  labels:
+    app: frontend
+    tier: web
+    project: expense
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+      tier: web
+      project: expense
+  template:
+    metadata:
+      labels:
+        app: frontend
+        tier: web
+        project: expense
+    spec:
+      containers:
+      - name: frontend
+        image: joindevops/frontend:v1
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          # limits is greater than or equal to requests
+          limits:
+            cpu: 100m
+            memory: 128Mi
+        volumeMounts:   # -------addd
+            - name: nginx-conf
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+              readOnly: true
+
+
+
+}
+
+    (pushing to git-hub)
+    -- git add . ; git commit -m "k8-ingress"; git push origin main
+    
+    (pulling to workstation)--Mobaxterm
+    -- git pull
+    -- kubectl apply -f manifest.yaml
+    -- kubectl get configmap 
+        # we see frontend configmap
+    -- kubectl describe pod frontend-pod
+        # we see mounted data in the pod 
+    -- kubectl exec -it frontend-pod -- bash
+        # cd /etc/nginx
+        # cat nginx.conf    
+       
+-->(Now commenting in "manifest.yaml" - configMap)
+
+         # this is as part of nginx configmap
+         location /api/ { 
+            proxy_pass http://backend:8080/;
+        }
+    
+    (pushing to git-hub)
+    -- git add . ; git commit -m "k8-ingress"; git push origin main
+        
+    (pulling to workstation)--Mobaxterm
+        -- git pull
+        -- kubectl apply -f manifest.yaml
+            # configmap is configured
+        -- kubectl delete -f pod frontend-1 frontend-2
+            # k8 recreates the new pods again with new config-map
+        -- kubectl exec -it frontend-pod -- bash
+            # cd /etc/nginx
+            # cat nginx.conf        
+--> this is how we can use configMap as volumes and edit changes when ever there is a requiremnet
+}
+
+
+
